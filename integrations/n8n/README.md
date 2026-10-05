@@ -1,0 +1,58 @@
+# Vitamin-C email knowledge pilot
+
+## Flow
+
+Vitamin-C Gmail → n8n → Supermemory → authenticated Brain.
+
+- Mailbox: `luke@vitaminc.vc`.
+- Workflow: [Vitamin-C · Inbound email to Brain](https://vitaminc-vc.app.n8n.cloud/workflow/nQZOH7AFAwTHkjkf).
+- **Normal ingestion:** Gmail Message Received checks for matching new mail internally every minute and wakes the pipeline when messages are found. There is no one-minute Schedule Trigger running the entire workflow.
+- **Recovery:** one scheduled scan daily at 06:00 in the existing instance timezone catches failed messages and older emails moved out of spam.
+- Both paths load up to 50 unindexed inbound messages since pilot activation (30 September 2026, 16:12 UTC), read or unread. They exclude sent mail, drafts, spam and trash and do not mark mail read. A backlog larger than 50 needs additional recovery runs; ordinary new-message events also drain pending mail.
+- The wakeup trigger returns lightweight metadata. The Gmail Get Many node has Simplify disabled and fetches full MIME text before normalization. Truncated snippets are never ingested. Attachments are not downloaded or ingested.
+- Each document has stable `vitaminc_luke_gmail_<messageId>` custom ID, so rerunning a saved execution updates the same document.
+- Container: `vitaminc_email_admin`. Raw reference documents use `taskType: superrag`.
+- Metadata keeps Gmail message/thread IDs, mailbox, subject, sender, recipients, original date, source URL, admin visibility and ingestion version.
+- HTTP nodes retry up to three times. The flow checks document status every 15 seconds, stops on failed indexing, and caps waiting at 20 checks. Success is a completed ingestion receipt, not merely HTTP acceptance.
+- After Supermemory reports `done`, the workflow applies the Gmail label `vitamin-c-brain-indexed`. The next scan excludes that label. Failed messages keep their unindexed state and remain eligible for retry; stable custom IDs make overlapping or repeated runs safe. Removing that label intentionally queues a message for re-indexing. The portable template requires this label to exist. Attachments and edited-message/deletion synchronization remain outside this pilot.
+
+## Credentials and access
+
+Gmail OAuth is stored in n8n credentials. One shared Supermemory key is stored in n8n's `Supermemory · Vitamin-C email` Bearer credential and as `SUPERMEMORY_API_KEY` in this checkout's ignored, mode-600 `.env.local`. The key is scoped to `vitaminc_email_admin`, expires 30 September 2027, and supports both document ingestion and retrieval. The n8n credential allows only `api.supermemory.ai`. No key is included in the workflow JSON or client bundle. Gmail OAuth credentials remain separate from the Supermemory key.
+
+The console's scoped keys restrict container tags and expose its fixed Documents, Memories, Search and Profile endpoint set; they do not offer separate read-only/write-only endpoint toggles. The app uses its key only for retrieval. Scope expiry is 30 September 2027.
+
+The approved Gmail grant uses the "Read, compose, and send" permission, without granting the separate full-mailbox permanent-deletion permission. The workflow reads mail and adds the indexed marker after successful processing. It does not change read status, send messages, delete mail, or change spam classification.
+
+Brain access is enforced on the server: only admins can retrieve the pilot container. It is never chosen by the browser or by email contents. Result metadata is checked for the expected mailbox, source type and admin visibility. Scouts receive an access error while the email pilot is configured. All original mail content remains untrusted source evidence.
+
+## Chat behavior
+
+Search uses the official Supermemory SDK with container-scoped document retrieval. Matching passages are quoted and linked to the original Gmail thread. Related facts across two chunks are merged with overlap removed, and weak unrelated matches are excluded. Live answers now use OpenAI Responses and Luna, with citations and clean full-email source cards. Search failure/zero results never become mock answers. The portfolio now reads the approved Airtable base directly; LP records remain mock data. Email screening is built and tested but is not connected to this live ingestion workflow.
+
+## Local artifacts
+
+- `vitaminc-email-brain.json`: portable inactive workflow template. Import into an empty editor, select the Gmail credential on the trigger and Gmail nodes, select the shared Bearer credential on HTTP nodes, then publish. n8n imports append nodes to an existing graph; back up and replace that graph when updating in place.
+- `normalize-email.mjs`: shared normalization logic embedded into the n8n Code node.
+- `../../scripts/create-email-workflow.mjs`: regenerate the template after normalization changes.
+- `../../scripts/check-knowledge.ts`: source isolation and citation checks.
+- `../../scripts/prepare-gmail-trigger.mjs`: prepare this cutover from the original live export while preserving workflow identity and credential references. The prepared file contains no token values and belongs in ignored `.private/n8n/`.
+- `../../scripts/check-email-workflow.mjs`: validate trigger cadence, graph routing, full MIME, paired items, stable IDs, excluded folders, index-before-label handling, bounded batches and shared credential references.
+
+## Original pilot verification
+
+Gmail OAuth has returned real mail from the intended Vitamin-C account. The published export confirms active status and credentials assigned to all three provider nodes. The Supermemory retrieval key successfully queried the restricted container. The founder test from personal Gmail was received in spam; Luke moved it out of spam. n8n backfilled it, then the recovery workflow processed it using the same stable custom ID (`vitaminc_luke_gmail_1a0f317f9c5e30e9`) and document ID (`MhewHSn8H7BALZNT3FZU7y`). Supermemory status is `done`. The authenticated Brain retrieved the test’s €37,400 monthly recurring revenue, 14-month runway, 3 signed pilots and late-body codename Cedar Lantern 42, with an original Gmail citation. Automatic scheduled executions succeeded afterward and skipped the already indexed email. The label was read back in the receiving inbox. The local dev server was restarted for the final UI check. All founder figures are fictional test data.
+
+## Shared key — 4 October 2026
+
+The existing Brain key was saved into the workflow's existing Bearer credential. Direct write/indexing/full-email retrieval passed with the original fixture document ID. The n8n Execute step check was blocked by **Execution limit reached**; this is an execution-capacity issue, not an observed Supermemory permission failure. Restore n8n capacity, then rerun ingestion and read back indexing completion before reporting current live ingestion as verified. The obsolete ingestion key was revoked after Luke confirmed. The workspace now has one active scoped key shared by both consumers.
+
+Additional mailboxes will use our Google OAuth and n8n pipeline, not Supermemory native connectors. See [the agreed architecture](../../docs/gmail-ingestion-architecture.md).
+
+## Gmail-trigger cutover — 4 October 2026
+
+Published the existing workflow as **Gmail trigger and daily recovery**, version `3ae10adc-8232-4f00-ad55-725894d8cfa5`. The saved export has 14 unique nodes, exactly one Gmail trigger and one daily schedule, no one-minute schedule, and no pinned mock data. Existing Gmail and shared Supermemory credential references are retained. The native Supermemory connector is not involved.
+
+The published export passed `node scripts/check-email-workflow.mjs .private/n8n/email-workflow-trigger-published.json`. Saved UI values were checked for Message Received, read and unread messages, excluded spam/drafts/trash/sent/indexed labels, full MIME retrieval and the 50-message limit. The actual normalization Code node was exercised with paired fixtures, including excluded mail; indexing failure and timeout checks passed. Evidence: `artifacts/gmail-trigger-checks.json` and `artifacts/gmail-trigger-published.png`.
+
+**Runtime remains blocked:** Fetch Test Event returned Execution limit reached. Publication and configuration are verified; new-email delivery through this version is not yet verified. Restoring capacity does not require another Supermemory key. Screening remains off.

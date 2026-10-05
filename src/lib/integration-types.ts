@@ -1,0 +1,9 @@
+export type Provider = 'gmail' | 'notion' | 'airtable' | 'gdrive'
+export type Connector = { id: string; provider: Provider; name: string; account?: string; status: 'connected' | 'pending' | 'disconnected' | 'error'; method: string; containerTag?: string; lastSync?: string; lastChecked?: string; documentCount?: number; error?: string }
+export type Thesis = { text: string; assessment: string; sourceUrl: string; updatedAt: string; scoutAccess: boolean; origin?:'airtable'|'workspace' }
+export type ScreeningPolicy = { mode: 'off'; model: string; blockedSenders: string[]; blockedLabels: string[] }
+export type ScreeningResult = { decision: 'include' | 'exclude' | 'review'; category: 'investment' | 'hr' | 'unrelated' | 'uncertain'; reason: string; method: 'rules' | 'model' | 'fallback' }
+export type IntegrationSettings = { thesis: Thesis; screening: ScreeningPolicy; portfolioScoutAccess: boolean; notionScoutAccess: boolean }
+export type ConnectorOverview = { connections: Connector[]; settings: IntegrationSettings; capabilities: { oauth: boolean; screening: boolean; airtable: boolean; notion: boolean }; storage: 'local' }
+export type PortfolioCompany = { id: string; name: string; legalName: string; sector: string; stage: string; website?: string; country?: string; founder?: string; investedEUR: number | null; ownershipPercent: number | null; moic: number | null; employees: number | null; reportingCurrency: string | null; period: string | null; submittedAt: string | null; runwayUntil: string | null; revenueYTD: number | null; netCash: number | null; description: string; sourceUrl: string; financialSourceUrl?: string }
+export type PortfolioResult = { companies: PortfolioCompany[]; fetchedAt: string; source: 'Airtable'; warning?: string }
