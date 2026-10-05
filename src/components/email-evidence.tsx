@@ -1,19 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, FileText } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import type { Source } from '../lib/mock-data'
 import { emailBody, senderIdentity, sourceTitle } from '../lib/source-presentation'
 import { SourceLogo } from './source-logo'
 
 export function EmailEvidence({source,full=false}:{source:Source;full?:boolean}) {
-  const [expanded,setExpanded]=useState(false)
-  if(full)return <EmailContent source={source} full/>
-  return <details className="email-reference surface" onToggle={event=>setExpanded(event.currentTarget.open)}>
-    <summary><SourceLogo provider="Gmail"/><span className="email-reference-title"><strong>{sourceTitle(source.title)}</strong><small>{senderIdentity(source.from).name}</small></span><span className="email-reference-action">{expanded?'Hide email':'View email'}</span><ChevronDown className="email-reference-chevron" size={16}/></summary>
-    {expanded&&<div className="email-reference-body"><EmailContent source={source} full/></div>}
-  </details>
-}
-
-function EmailContent({source,full=false}:{source:Source;full?:boolean}) {
   const [loaded,setLoaded]=useState<Source | null>(null),[error,setError]=useState(false),[attempt,setAttempt]=useState(0)
   // Older saved conversations contain only search snippets. Hydrate their original email too.
   useEffect(()=>{
