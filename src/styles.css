@@ -358,7 +358,7 @@ h2,h3 { font-size:13px; line-height:20px; font-weight:500; }
 .auth-form { display:flex; flex-direction:column; gap:20px; }
 .auth-field { display:flex; flex-direction:column; gap:8px; }
 .auth-field>span { padding-left:12px; font-size:12px; font-weight:500; }
-.auth-field:has(input:focus-visible)>span { text-decoration:underline; text-underline-offset:4px; }
+.auth-field input:focus-visible { box-shadow:0 2px 4px rgb(24 24 20 / 9%); }
 .auth-field input { width:100%; min-height:44px; padding:11px 12px; border:.5px solid var(--line); border-radius:10px; box-shadow:0 1px 2px rgb(24 24 20 / 3%); }
 .auth-field input:focus { background:var(--surface); outline:0; }
 .auth-submit { width:100%; min-height:42px; margin-top:4px; }
