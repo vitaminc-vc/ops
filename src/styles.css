@@ -115,7 +115,7 @@ h2,h3 { font-size:13px; line-height:20px; font-weight:500; }
 .email-evidence-content h3 { font-size:12px; font-weight:500; margin-bottom:8px; overflow-wrap:anywhere; }
 .email-body { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; line-height:21px; color:var(--ink-2); }
 .email-retry { font:inherit; color:var(--ink); text-decoration:underline; text-underline-offset:3px; }
-.dialog.email-dialog { width:min(960px,calc(100vw - 32px)); }
+.dialog-content.email-dialog { width:min(960px,calc(100vw - 32px)); }
 .email-dialog .dialog-body { padding:0; }
 .email-evidence-full { border:0; border-radius:0; box-shadow:none; }
 .email-evidence-full .email-evidence-header { padding:20px 24px; }
