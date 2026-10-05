@@ -16,6 +16,10 @@ assert.match((await parseAttachment(plain)).text,/thermal storage/)
 const ppt=zipSync({'ppt/slides/slide1.xml':strToU8(`<p:sld><a:p><a:t>${text}</a:t></a:p></p:sld>`),'ppt/notesSlides/notesSlide1.xml':strToU8('<a:p><a:t>Notes contain confidential individual employee payroll.</a:t></a:p>')})
 const parsed=await parseAttachment({name:'deck.pptx',mimeType:'application/vnd.openxmlformats-officedocument.presentationml.presentation',data:Buffer.from(ppt).toString('base64')})
 assert.match(parsed.text,/individual employee payroll/)
+const workbook=zipSync({'xl/sharedStrings.xml':strToU8('<sst><si><t>Confidential individual employee payroll.</t></si></sst>')})
+const chartDeck=zipSync({'ppt/slides/slide1.xml':strToU8(`<a:p><a:t>${text}</a:t></a:p>`),'ppt/charts/chart1.xml':strToU8('<c:v>Revenue</c:v><c:v>27400</c:v>'),'ppt/embeddings/chart.xlsx':workbook})
+const chartParsed=await parseAttachment({name:'chart-deck.pptx',mimeType:parsed.mimeType,data:Buffer.from(chartDeck).toString('base64')})
+assert.match(chartParsed.text,/Revenue 27400/);assert.match(chartParsed.text,/individual employee payroll/)
 await assert.rejects(parseAttachment({name:'unknown.bin',mimeType:'application/octet-stream',data:'AAAA'}))
 assert.equal(companyIdentity({name:'Example',website:'https://www.example.test/about',founder:null,description:null}).identityKey,'domain:example.test')
 assert.equal(companyIdentity({name:' Example ',website:null,founder:null,description:null}).identityKey,companyIdentity({name:'example',website:null,founder:null,description:null}).identityKey)
@@ -52,6 +56,7 @@ try{
   const priorWrites=memoryWrites,priorCalls=modelCalls
   assert.equal((await ingestEmail(fixture('03',{body:text+' Confidential individual employee payroll.',attachments:[]}))).status,'excluded')
   assert.equal((await ingestEmail(fixture('04',{attachments:[{name:'deck.pptx',mimeType:parsed.mimeType,data:parsed.data}]}))).status,'excluded')
+  assert.equal((await ingestEmail(fixture('0a',{attachments:[chartParsed]}))).status,'excluded')
   assert.equal(memoryWrites,priorWrites);assert.equal(modelCalls,priorCalls)
   assert.equal((await ingestEmail(fixture('05',{attachments:[{name:'unreadable.pdf',mimeType:'application/pdf',data:'AAAA'}]}))).status,'review')
   modelFails=true;assert.equal((await ingestEmail(fixture('06'))).status,'review');modelFails=false

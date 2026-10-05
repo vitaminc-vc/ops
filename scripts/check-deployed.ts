@@ -14,7 +14,8 @@ const pool=getPool(),messageId='fab'+randomBytes(8).toString('hex'),id='vitaminc
 const companyName='QAVerdant'+randomBytes(5).toString('hex')
 const companyWebsite=`https://${companyName.toLowerCase()}.example.invalid`
 const deckText=`${companyName} founder pitch. Our climate venture makes heat pumps for small farms. Our verified pilot metric is 47219 units of heat saved. Website ${companyWebsite}.`
-const bytes=zipSync({'ppt/slides/slide1.xml':strToU8(`<a:p><a:t>${deckText}</a:t></a:p>`),'ppt/notesSlides/notesSlide1.xml':strToU8('<a:p><a:t>Board presentation note: the deployment codename is Juniper Lighthouse.</a:t></a:p>')})
+const workbook=zipSync({'xl/worksheets/sheet1.xml':strToU8('<worksheet><row><c><v>89431</v></c></row></worksheet>')})
+const bytes=zipSync({'ppt/slides/slide1.xml':strToU8(`<a:p><a:t>${deckText}</a:t></a:p>`),'ppt/notesSlides/notesSlide1.xml':strToU8('<a:p><a:t>Board presentation note: the deployment codename is Juniper Lighthouse.</a:t></a:p>'),'ppt/charts/chart1.xml':strToU8('<c:v>Forecast heat units</c:v><c:v>89431</c:v>'),'ppt/embeddings/chart.xlsx':workbook})
 let memoryId:string|undefined,companyId:string|undefined
 try {
   const login=await fetch(base+'/api/auth/sign-in/email',{method:'POST',headers:{origin:base,'content-type':'application/json'},body:JSON.stringify({email:qa.email,password:qa.password})})
@@ -36,7 +37,7 @@ try {
   }
   assert.equal(receipt.status,'indexed')
   const row=(await pool.query('select memory_id,company_id from vitamin_data.ingestions where id=$1',[id])).rows[0];memoryId=row.memory_id;companyId=row.company_id
-  const documents=(await pool.query('select id,content,data from vitamin_data.documents where ingestion_id=$1',[id])).rows;assert.equal(documents.length,1);assert.match(documents[0].content,/Juniper Lighthouse/)
+  const documents=(await pool.query('select id,content,data from vitamin_data.documents where ingestion_id=$1',[id])).rows;assert.equal(documents.length,1);assert.match(documents[0].content,/Juniper Lighthouse/);assert.match(documents[0].content,/89431/)
   const download=await fetch(base+'/api/documents/'+documents[0].id,{headers:{cookie}});assert.equal(download.status,200);assert.deepEqual(Buffer.from(await download.arrayBuffer()),Buffer.from(bytes))
   const duplicate=await fetch(base+'/api/ingest/email',{method:'POST',headers,body:JSON.stringify(email)});assert.equal((await duplicate.json()).duplicate,true)
   const found=await retrieveEmailSources(`${companyName} Juniper Lighthouse 47219`,'admin');assert.ok(found.some(s=>s.id===id||s.id===memoryId),'The indexed attachment must be retrievable through the Brain source layer')

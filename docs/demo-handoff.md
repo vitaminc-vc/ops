@@ -28,6 +28,7 @@ Updated 5 October 2026. Rehearsal and sending the founder email are reserved for
 - Login scopes: OpenID, email, profile. Mailbox connection adds `https://www.googleapis.com/auth/gmail.readonly` with offline consent. New connections do not request email sending access.
 - Set server-only `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Import `integrations/n8n/vitaminc-connected-mailboxes.json`, assign the approved ingestion credential, verify capacity, and publish it before setting `GMAIL_SYNC_ENABLED=true`.
 - The prepared 30-minute schedule costs approximately 1,440 executions per 30-day month, across all registered mailboxes. It is not active yet.
+- Existing password-account holders should sign in with their password first and link Google from Connected Sources; this avoids implicitly linking an unverified local email account.
 - New staff start as scouts. Existing admin-only email and LP boundaries remain; an admin must assign any additional access deliberately.
 
 ## Notion destination
@@ -38,7 +39,7 @@ The Scout source references `24fc4749d20e803fb4abda88b3bc06f1`. Confirm this is 
 
 Passed: TypeScript, production build, integration/source unit checks, private database/ingestion tests, actual n8n Code-node fixture checks, 43/43 live screening cases, authenticated streaming, source/role/origin checks, deployed Better Auth login, Airtable/LP readback, HR PDF exclusion, and live PPTX/notes → company → private download → Supermemory indexing/retrieval → duplicate retry.
 
-PDF, PPTX, DOCX, TXT, CSV and Markdown extraction is implemented. Oversized, unreadable, unsupported or image-only content is held for review; it is not silently admitted. Individual files are limited to 15 MiB and the request to 24 MB. URLs requiring access are left unprocessed. n8n delivery, actual Google consent, Notion upload, full Scout research and live Attio research are **not** claimed as verified.
+PDF, PPTX, DOCX, TXT, CSV and Markdown extraction is implemented. Office chart data and embedded XLSX text (including hidden sheets and comments) are included in extraction and screening. Oversized, unreadable, unsupported or image-only content is held for review; it is not silently admitted. Individual files are limited to 15 MiB and the request to 24 MB. URLs requiring access are left unprocessed. n8n delivery, actual Google consent, Notion upload, full Scout research and live Attio research are **not** claimed as verified.
 
 The production PDF check caught missing Linux native dependencies. The Docker build now includes both the PDF worker and platform canvas binary; the repaired Railway deployment passed.
 
