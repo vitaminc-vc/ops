@@ -73,7 +73,7 @@ Approved founder emails and supported attachments are screened before storage in
 
 Portfolio management reads the approved Airtable base directly (one company, no financial submissions at verification). LP Engine displays the actual 405-entry Claude project snapshot, clearly dated; live Attio research is awaiting its sources. Startup assessment and Scout pages store run history and use the imported Claude rubrics. Scout is blocked until the full Notion pipeline can be checked.
 
-Better Auth Google sign-in and own-mailbox connections are implemented but awaiting the Google web client. Existing password accounts can sign in; production password signup is disabled. Notion company/file sync awaits a token with access to the confirmed deal database. Google Drive, Granola, Novata and LinkedIn are not connected. The app sends no outreach.
+Better Auth Google sign-in and own-mailbox connections are implemented but awaiting the Google web client. Existing password accounts can sign in; password registration is restricted to @vitaminc.vc addresses and creates scout accounts. Notion company/file sync awaits a token with access to the confirmed deal database. Google Drive, Granola, Novata and LinkedIn are not connected. The app sends no outreach.
 
 Encrypted integration configuration uses a persistent Railway volume and supports one app instance. Better Auth, companies, files, mailbox registrations and runs use private Supabase schemas. Email/LP/admin routes enforce current server-side roles; clients cannot choose arbitrary memory containers. Chat history remains user-scoped browser storage.
 
