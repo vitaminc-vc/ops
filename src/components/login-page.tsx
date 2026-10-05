@@ -1,6 +1,6 @@
 import { Link, useRouter } from '@tanstack/react-router'
 import { ArrowRight, LoaderCircle } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { safeRedirect } from '@/lib/access'
 
@@ -12,6 +12,8 @@ export function LoginPage({ redirectTo }: { redirectTo: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const [config, setConfig] = useState({ google: false, passwordSignup: false })
+  useEffect(() => { void fetch('/api/auth-config').then(r => r.json()).then(setConfig).catch(() => {}) }, [])
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     if (busy) return
@@ -30,6 +32,7 @@ export function LoginPage({ redirectTo }: { redirectTo: string }) {
   return <main className="auth-page"><div className="auth-panel">
     <Link to="/" className="brand auth-brand" aria-label="Vitamin-C home"><span className="brand-mark">V<sup>°</sup></span><span>Vitamin-C</span></Link>
     <h1>{mode === 'sign-up' ? 'Create your account' : 'Sign in to Vitamin-C'}</h1>
+    {config.google && <button className="button primary auth-submit" disabled={busy} onClick={() => { setBusy(true); void authClient.signIn.social({ provider: 'google', callbackURL: safeRedirect(redirectTo), errorCallbackURL: '/login' }).then(result => { if (result.error) throw Error(result.error.message) }).catch(error => { setError(error.message || 'Google sign-in failed.'); setBusy(false) }) }}>Continue with Google</button>}
     <form onSubmit={submit} className="auth-form">
       {mode === 'sign-up' && <label className="auth-field"><span>Name</span><input name="name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} required maxLength={100} disabled={busy} /></label>}
       <label className="auth-field"><span>Email</span><input type="email" name="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} disabled={busy} /></label>
@@ -38,6 +41,6 @@ export function LoginPage({ redirectTo }: { redirectTo: string }) {
       {error && <p className="form-error" role="alert">{error}</p>}
       <button className="button primary auth-submit" type="submit" disabled={busy}>{busy ? <><LoaderCircle className="spin" size={16} />{mode === 'sign-up' ? 'Creating account…' : 'Signing in…'}</> : <>{mode === 'sign-up' ? 'Create account' : 'Sign in'}<ArrowRight size={16} /></>}</button>
     </form>
-    <p className="auth-switch muted">{mode === 'sign-up' ? 'Already have an account?' : 'New to Vitamin-C?'} <button className="text-button" type="button" disabled={busy} onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setPassword(''); setError('') }}>{mode === 'sign-up' ? 'Sign in' : 'Create account'}</button></p>
+    {config.passwordSignup ? <p className="auth-switch muted">{mode === 'sign-up' ? 'Already have an account?' : 'New to Vitamin-C?'} <button className="text-button" type="button" disabled={busy} onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setPassword(''); setError('') }}>{mode === 'sign-up' ? 'Sign in' : 'Create account'}</button></p> : <p className="auth-switch muted">{config.google ? 'Use your Vitamin-C Google account to join the workspace.' : 'Team Google sign-in is awaiting setup. Existing accounts can sign in above.'}</p>}
   </div></main>
 }

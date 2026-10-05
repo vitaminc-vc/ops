@@ -60,3 +60,4 @@ export const verification = vitaminAuth.table('verification', {
 }, table => [index('verification_identifier_idx').on(table.identifier), index('verification_expiry_idx').on(table.expiresAt), serverAccess()]).enableRLS()
 
 export const schema = { user, session, account, verification }
+export * from './workspace-schema'

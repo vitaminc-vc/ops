@@ -7,6 +7,6 @@ export default defineConfig({
   dialect: 'postgresql',
   schema: './src/db/schema.ts',
   out: './drizzle',
-  schemaFilter: ['vitamin_auth'],
+  schemaFilter: ['vitamin_auth', 'vitamin_data'],
   dbCredentials: { url: process.env.SUPABASE_DB_PASSWORD || process.env.DATABASE_URL ? databaseURL(true) : 'postgresql://localhost/postgres' },
 })

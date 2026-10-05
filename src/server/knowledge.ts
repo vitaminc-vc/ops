@@ -5,6 +5,12 @@ import type { ChatResult, Source } from '@/lib/mock-data'
 import type { SearchDocumentsResponse } from 'supermemory/resources/search'
 import type { Role } from '@/lib/access'
 import { sourceTitle } from '../lib/source-presentation'
+import { getPool } from './db'
+
+async function approvedMailboxes() {
+  const rows = await getPool().query("select email from vitamin_data.mailboxes where status='connected'");
+  return ['luke@vitaminc.vc', ...rows.rows.map(r => r.email as string)]
+}
 
 // Roles determine access. Neither request payloads nor retrieved text can choose tags.
 export const emailContainer = 'vitaminc_email_admin'
@@ -43,13 +49,13 @@ export function gmailSourceURL(threadId: string,mailbox='luke@vitaminc.vc') {
 export async function retrieveEmailKnowledge(prompt: string, role: Role, signal?: AbortSignal): Promise<ChatResult> {
   if (role !== 'admin') throw new Error('Email knowledge requires admin access.')
   const result = await emailKnowledgeClient().search.documents({ q: prompt, containerTag: emailContainer, limit: 4, chunkThreshold: .5, includeFullDocs: false, includeSummary: false, rerank: true }, { signal })
-  const sources = emailSources(result, prompt)
+  const sources = emailSources(result, prompt, await approvedMailboxes())
   return emailAnswer(sources)
 }
 export async function retrieveEmailSources(prompt: string, role: Role, signal?: AbortSignal) {
   if (role !== 'admin') throw new Error('Email knowledge requires admin access.')
   const result = await emailKnowledgeClient().search.documents({ q: prompt, containerTag: emailContainer, limit: 6, chunkThreshold: .5, includeFullDocs: false, includeSummary: false, rerank: true }, { signal })
-  const sources = emailSources(result, prompt)
+  const sources = emailSources(result, prompt, await approvedMailboxes())
   return Promise.all(sources.map(async source => ({ ...source, ...await retrieveFullEmail(source.id, role, signal), excerpt: source.excerpt })))
 }
 export async function retrieveFullEmail(id: string, role: Role, signal?: AbortSignal): Promise<Source> {
@@ -58,10 +64,10 @@ export async function retrieveFullEmail(id: string, role: Role, signal?: AbortSi
   const document = await emailKnowledgeClient().documents.get(id, { signal })
   const raw = document.metadata
   const m = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : null
-  if (!document.containerTags?.includes(emailContainer) || m?.visibility!=='admin' || m.mailbox!=='luke@vitaminc.vc' || m.sourceType!=='email') throw new Error('Email unavailable.')
+  if (!document.containerTags?.includes(emailContainer) || m?.visibility!=='admin' || !m?.mailbox || !(await approvedMailboxes()).includes(String(m.mailbox)) || m.sourceType!=='email') throw new Error('Email unavailable.')
   if (document.status!=='done' || !document.content?.trim()) throw new Error('The full email is still indexing or unavailable.')
   // Search returns custom IDs; preserve the requested ID so saved cards match their hydrated source.
-  return { id, title: sourceTitle(metadataText(m, 'subject') || document.title || 'Email'), provider: 'Gmail', excerpt: document.content, content: document.content, receivedAt: metadataText(m, 'receivedAt'), from: metadataText(m, 'from'), to: metadataText(m, 'to'), attachments: attachmentMetadata(m), sourceUrl: gmailSourceURL(metadataText(m, 'gmailThreadId')) }
+  return { id, title: sourceTitle(metadataText(m, 'subject') || document.title || 'Email'), provider: 'Gmail', excerpt: document.content, content: document.content, receivedAt: metadataText(m, 'receivedAt'), from: metadataText(m, 'from'), to: metadataText(m, 'to'), attachments: attachmentMetadata(m), sourceUrl: gmailSourceURL(metadataText(m, 'gmailThreadId'), metadataText(m, 'mailbox')) }
 }
 export function queryEntities(prompt:string) {
   const text=prompt.replace(/^(?:compare|prepare|brief|show|summarize|assess|find|tell|search|please)\s+/gmi,'')
@@ -74,7 +80,7 @@ function attachmentMetadata(metadata: Record<string, unknown> | null): Source['a
   if (!Array.isArray(raw)) return []
   return raw.filter(item => item && typeof item === 'object' && typeof item.name === 'string').slice(0,20).map(item => ({ name:item.name.slice(0,250), ...(typeof item.mimeType==='string'?{mimeType:item.mimeType}:{}), ...(typeof item.size==='number' && Number.isFinite(item.size)?{size:item.size}:{}) }))
 }
-export function emailSources(result: SearchDocumentsResponse, prompt = ''): Source[] {
+export function emailSources(result: SearchDocumentsResponse, prompt = '', mailboxes = ['luke@vitaminc.vc']): Source[] {
   const stopwords = new Set('how do does can what are is the a an my me your our about help vitamin email inbox tell please for with and or to of in on at from by as it this that these those i we you they its their be been being have has had will would could should latest recent update updates using use based according give brief briefing prepare next founder call cover three questions question show summarize summary before after more most any all into'.split(' '))
   const terms = [...new Set(prompt.toLowerCase().match(/[\p{L}\p{N}]{2,}/gu) || [])].filter(term => !stopwords.has(term)).slice(0, 25)
   const normalizeEntity=(value:string)=>value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim()
@@ -83,7 +89,7 @@ export function emailSources(result: SearchDocumentsResponse, prompt = ''): Sour
   return result.results.flatMap(document => {
     const m = document.metadata
     // Defense in depth: only emails from the configured mailbox with the approved scope.
-    if (m?.visibility !== 'admin' || m?.mailbox !== 'luke@vitaminc.vc' || m?.sourceType !== 'email') return []
+    if (m?.visibility !== 'admin' || !mailboxes.includes(String(m?.mailbox || '')) || m?.sourceType !== 'email') return []
     const documentText=[metadataText(m,'subject'),document.title,...document.chunks.map(chunk=>chunk.content)].join(' ').toLowerCase()
     if (namedEntities.length && !namedEntities.some(entity=>normalizeEntity(documentText).includes(entity))) return []
     // Keep related facts from the best two passages; remove overlap without inventing a summary.
@@ -91,7 +97,7 @@ export function emailSources(result: SearchDocumentsResponse, prompt = ''): Sour
     const excerpts = document.chunks.filter(chunk => chunk.isRelevant && (!terms.length || titleMatch || termMatches(chunk.content) > 0)).sort((a, b) => termMatches(b.content) - termMatches(a.content) || b.score - a.score).slice(0, 3).map(chunk => chunk.content.trim())
     const excerpt = mergePassages(excerpts)
     if (!excerpt) return []
-    return [{ id: document.documentId, title: sourceTitle(metadataText(m, 'subject') || document.title || 'Email'), provider: 'Gmail', excerpt: excerpt.slice(0, 18000), receivedAt: metadataText(m, 'receivedAt'), from: metadataText(m, 'from'), to: metadataText(m, 'to'), attachments:attachmentMetadata(m), sourceUrl: gmailSourceURL(metadataText(m, 'gmailThreadId')) }]
+    return [{ id: document.documentId, title: sourceTitle(metadataText(m, 'subject') || document.title || 'Email'), provider: 'Gmail', excerpt: excerpt.slice(0, 18000), receivedAt: metadataText(m, 'receivedAt'), from: metadataText(m, 'from'), to: metadataText(m, 'to'), attachments:attachmentMetadata(m), sourceUrl: gmailSourceURL(metadataText(m, 'gmailThreadId'), metadataText(m, 'mailbox')) }]
   })
 }
 export function emailAnswer(sources: Source[]): ChatResult {

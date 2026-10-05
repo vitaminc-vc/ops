@@ -1,33 +1,34 @@
 # Gmail ingestion architecture
 
-Decision approved by Luke on 4 October 2026.
+Current implementation, 5 October 2026. See [demo readiness and owner actions](demo-handoff.md) for live status.
 
-## One Supermemory credential
+## Existing mailbox
 
-Use one container-scoped service key for n8n document writes and server retrieval. The current container is `vitaminc_email_admin`; it is admin-only. The key expires 30 September 2027. Keep it in n8n's credential store and ignored server environment, never in the workflow JSON, browser or source control.
+Vitamin-C n8n reads `luke@vitaminc.vc` using its existing Gmail OAuth credential. A Gmail Message Received trigger wakes the workflow; one daily recovery schedule handles missed/failed work. Empty internal trigger polls do not start the full workflow. Both paths fetch up to 50 unprocessed messages, load every member of their threads, and download attachments.
 
-Supermemory receives content through `/v3/documents` and handles indexing and retrieval. Do not use its native Gmail connector or Connections API. No separate Supermemory connection-management credential is needed. Gmail OAuth credentials are a different provider and still required.
+The replacement workflow calls the deployed app's `/api/ingest/email` with the separate, host-restricted `Vitamin-C screened ingestion` Bearer credential. This credential cannot call admin APIs. The app parses all supported files, screens the entire email/thread/files, then writes approved content and companies to private Supabase tables and the fixed admin-only `vitaminc_email_admin` Supermemory container. Original file bytes remain private and downloadable only by admins. Optional Notion sync creates a company page and attaches files after screening.
 
-## Additional mailboxes
+Excluded or review-held emails retain only minimal status metadata, with no subject, body, sender, filenames or bytes. Result labels distinguish indexed, excluded and review. An indexed label is applied only after Supermemory reports `done`. Missing files or model failures hold content. Saved n8n execution payloads are disabled.
 
-The admin-only Connectors page will manage our ingestion connections. This onboarding is not enabled yet. Configure our Google OAuth web client and n8n routing before enabling it.
+## Staff onboarding
 
-1. A currently authenticated admin starts Google authorization for a named mailbox. Request Gmail read access; add modify access only if using the existing indexed-label strategy. Do not request send/compose access for new ingestion-only connections.
-2. Bind a short-lived, one-use OAuth state to the initiating admin, exact mailbox and server callback. Verify the granted account and scopes. Handle denial, mismatches, expired state and replay without creating a connected record.
-3. Store refresh tokens encrypted on the server or in n8n credentials. Refresh access tokens on the server. Never return tokens to the browser. Support reconnection and disconnect, including stopping the corresponding workflow route.
-4. Give each mailbox a stable internal connection ID. Route n8n reads through that mailbox's authorization. Deduplicate with a stable ID that includes the mailbox/connection and Gmail message ID; two mailboxes may contain the same thread.
-5. Normalize full MIME content into clean text. Add mailbox, connection ID, original date, message/thread IDs, source URL, company/event associations and admin visibility as metadata. Never let an email or browser select an arbitrary memory container.
-6. Apply screening before the Supermemory document POST once the policy is explicitly enabled. Excluded or review-held content must not enter memory. Current enforcement stays OFF until the policy is agreed with Vitamin-C.
-7. Use the shared scoped key to ingest. Verify Supermemory indexing status `done` before recording success or setting an indexed marker. Preserve retries and idempotency.
-8. Extend the server's approved-mailbox allowlist before enabling new connections. Retrieval must verify admin role, container, source type, mailbox and registered connection metadata. Company associations organize the knowledge; they do not require one API key per company.
+Better Auth handles Google authorization and state. Google sign-in requires a verified `@vitaminc.vc` address and creates a scout account. Connected Sources is visible to staff; they can link only their own Google account and request Gmail read-only scope. The server verifies the granted Gmail profile equals the signed-in identity before registering a mailbox. Tokens are encrypted in Better Auth storage and never returned through browser token endpoints.
 
-The existing Luke mailbox uses its current n8n OAuth credential with Gmail Message Received and a daily recovery scan. Gmail polling happens inside the trigger; the full workflow no longer runs every minute while idle. It does not depend on the local app being online. Extra mailboxes must also use a reachable worker/ingestion path; a development localhost URL cannot be called by n8n Cloud.
+The inactive connected-mailbox n8n template calls `/api/ingest/sync` every 30 minutes. The server refreshes grants, checks account ownership, reads complete threads and files, and uses the same screened ingestion code. IDs include mailbox identity. A disconnected mailbox stops at the next per-message check. A global lock prevents overlapping syncs; a watermark advances only after the complete batch is handled.
 
-## Gates before enabling onboarding
+Both Google client credentials and `GMAIL_SYNC_ENABLED=true` are required. Keep that flag false until the schedule is active and Google setup is tested. No new Supermemory credential or native Supermemory Gmail connector is needed.
 
-- Google Cloud project and web OAuth client, Gmail API enabled, exact callback URI, consent audience/test users as appropriate.
-- Encrypted token storage, refresh and revoked-grant recovery; current local file storage supports only one persistent app instance.
-- Per-mailbox n8n routing and an authenticated service interface if n8n calls the app. Give this interface ingestion-specific authority; a service token is not another Supermemory key.
-- Verify authorization, ingestion, indexing and role-scoped retrieval independently. A successful OAuth redirect or queued POST alone is not proof of searchable knowledge.
+## Storage and access
 
-References: [Google OAuth web-server flow](https://developers.google.com/identity/protocols/oauth2/web-server), [Gmail authorization scopes](https://developers.google.com/workspace/gmail/api/auth/scopes), [Supermemory scoped keys](https://supermemory.ai/docs/authentication).
+`vitamin_data` contains companies, ingestion receipts, documents, registered mailboxes and agent runs. RLS and schema grants restrict access to the app role; anonymous/authenticated Data API roles have no access. Admin-only routes guard companies, documents, email knowledge, LP context and runs. Registered mailbox metadata extends the server's fixed retrieval allowlist. Browser/model input cannot select arbitrary containers.
+
+The app runs as one Railway instance with a persistent volume for encrypted integration configuration. Better Auth sessions/tokens and workspace records are in Supabase. Use a privileged connection only for reviewed migrations, never for runtime.
+
+## Remaining gates
+
+- Vitamin-C n8n execution capacity and publication/runtime verification of the saved replacement draft.
+- Google web client, Gmail API, consent audience and a real staff authorization test.
+- Notion integration Read/Insert/Update access to the confirmed deal database.
+- Real inbound email delivery and the user-run founder-deck rehearsal.
+
+Provider references: [Google web OAuth](https://developers.google.com/identity/protocols/oauth2/web-server), [Gmail scopes](https://developers.google.com/workspace/gmail/api/auth/scopes), [n8n Gmail operations](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.gmail/message-operations/).

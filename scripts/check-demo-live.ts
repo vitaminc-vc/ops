@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import { user } from '../src/db/schema'
 import { createDatabase } from '../src/server/db'
 config({path:'.env.local',quiet:true})
-const base='http://127.0.0.1:3000', path='.private/demo-qa.json', {db,pool}=createDatabase()
+const base=process.env.QA_BASE_URL||'http://127.0.0.1:3000', path='.private/demo-qa.json', {db,pool}=createDatabase()
 const call=(url:string,cookie='',body?:unknown,origin=base)=>fetch(base+url,{method:body?'POST':'GET',headers:{...(cookie?{cookie}:{}),...(body?{'Content-Type':'application/json',origin}:{})},body:body?JSON.stringify(body):undefined})
 if(process.argv.includes('--cleanup')){
   const saved=JSON.parse(await readFile(path,'utf8'));assert.match(saved.email,/^vitamin-c-demo-qa-[a-f0-9-]+@example\.invalid$/)
