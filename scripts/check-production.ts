@@ -23,5 +23,5 @@ try{
   assert.equal(r.status,200);const receipt=await r.json();assert.equal(receipt.status,'excluded','Production PDF extraction must expose HR text to screening.');assert.equal(receipt.terminal,true)
   const row=(await pool.query('select content,decision from vitamin_data.ingestions where id=$1',[id])).rows[0];assert.equal(row.content,null);assert.equal(row.decision,'exclude')
   assert.equal((await pool.query('select count(*)::int n from vitamin_data.documents where ingestion_id=$1',[id])).rows[0].n,0)
-  console.log('Production bundle verified: database health, protected APIs, signup disabled, provider tokens server-only, PDF parsed and HR rejected before content/file storage.')
+  console.log('Production bundle verified: database health, protected APIs, external-domain signup rejected, provider tokens server-only, PDF parsed and HR rejected before content/file storage.')
 }finally{await pool.query('delete from vitamin_data.ingestions where id=$1',[id]);await pool.end()}

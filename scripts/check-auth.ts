@@ -17,7 +17,7 @@ const createdIds: string[] = []
 const call = (path: string, cookie = '', body?: unknown, method = body ? 'POST' : 'GET', origin = base) => fetch(`${base}${path}`, { method, redirect: 'manual', headers: { ...(cookie ? { cookie } : {}), ...(body ? { 'Content-Type': 'application/json', origin } : {}) }, body: body ? JSON.stringify(body) : undefined })
 const cookieFrom = (response: Response) => response.headers.getSetCookie().map(cookie => cookie.split(';')[0]).join('; ')
 async function signup(label: string, extra: Record<string, unknown> = {}) {
-  const email = `vitamin-c-qa-${marker}-${label}@example.invalid`
+  const email = `vitamin-c-qa-${marker}-${label}@vitaminc.vc`
   let response = await call('/api/auth/sign-up/email', '', { name: `QA ${label}`, email, password, ...extra })
   if (response.status === 429) {
     // Exercise the real signup limiter without disabling it for tests.
@@ -44,12 +44,12 @@ try {
   assert.equal((await call('/api/admin/users', 'tsr-csrf-token=unrelated-framework-cookie')).status, 401)
   assert.equal((await call('/portfolio')).status, 307)
   const scout = await signup('scout')
-  const attempt = await call('/api/auth/sign-up/email', '', { name: 'QA forged admin', email: `vitamin-c-qa-${marker}-forged@example.invalid`, password, role: 'admin' })
+  const attempt = await call('/api/auth/sign-up/email', '', { name: 'QA forged admin', email: `vitamin-c-qa-${marker}-forged@vitaminc.vc`, password, role: 'admin' })
   if (attempt.ok) {
     const data = await attempt.json(); createdIds.push(data.user.id)
     assert.equal(data.user.role, 'scout', 'A forged signup role must not elevate privileges')
   } else assert.equal(attempt.status, 400)
-  const shortPassword = await call('/api/auth/sign-up/email', '', { name: 'Short', email: `vitamin-c-qa-${marker}-short@example.invalid`, password: 'short' })
+  const shortPassword = await call('/api/auth/sign-up/email', '', { name: 'Short', email: `vitamin-c-qa-${marker}-short@vitaminc.vc`, password: 'short' })
   assert.equal(shortPassword.status, 400)
   const wrongLogin = await call('/api/auth/sign-in/email', '', { email: scout.email, password: 'Wrong-password-1234' })
   assert.equal(wrongLogin.status, 401)

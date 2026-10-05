@@ -3,6 +3,7 @@ import { ArrowRight, LoaderCircle } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { safeRedirect } from '@/lib/access'
+import { isVitaminCEmail } from '@/lib/workspace-email'
 
 export function LoginPage({ redirectTo }: { redirectTo: string }) {
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in')
@@ -12,11 +13,12 @@ export function LoginPage({ redirectTo }: { redirectTo: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  const [config, setConfig] = useState({ google: false, passwordSignup: false })
+  const [config, setConfig] = useState({ google: false, passwordSignup: true })
   useEffect(() => { void fetch('/api/auth-config').then(r => r.json()).then(setConfig).catch(() => {}) }, [])
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     if (busy) return
+    if (mode === 'sign-up' && !isVitaminCEmail(email)) { setError('Use your @vitaminc.vc email to create an account.'); return }
     setBusy(true); setError('')
     try {
       const result = mode === 'sign-up'
@@ -35,12 +37,12 @@ export function LoginPage({ redirectTo }: { redirectTo: string }) {
     {config.google && <button className="button primary auth-submit" disabled={busy} onClick={() => { setBusy(true); void authClient.signIn.social({ provider: 'google', callbackURL: safeRedirect(redirectTo), errorCallbackURL: '/login' }).then(result => { if (result.error) throw Error(result.error.message) }).catch(error => { setError(error.message || 'Google sign-in failed.'); setBusy(false) }) }}>Continue with Google</button>}
     <form onSubmit={submit} className="auth-form">
       {mode === 'sign-up' && <label className="auth-field"><span>Name</span><input name="name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} required maxLength={100} disabled={busy} /></label>}
-      <label className="auth-field"><span>Email</span><input type="email" name="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} disabled={busy} /></label>
+      <label className="auth-field"><span>Email</span><input type="email" name="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} aria-describedby={mode === 'sign-up' ? 'email-hint' : undefined} disabled={busy} />{mode === 'sign-up' && <small className="muted" id="email-hint">Use your @vitaminc.vc email.</small>}</label>
       <label className="auth-field"><span>Password</span><input type="password" name="password" autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)} required minLength={mode === 'sign-up' ? 12 : undefined} maxLength={128} aria-describedby={mode === 'sign-up' ? 'password-hint' : undefined} disabled={busy} /></label>
-      {mode === 'sign-up' && <p className="muted small" id="password-hint">Use at least 12 characters. New accounts receive scout access.</p>}
+      {mode === 'sign-up' && <p className="muted small" id="password-hint">Use at least 12 characters.</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
       <button className="button primary auth-submit" type="submit" disabled={busy}>{busy ? <><LoaderCircle className="spin" size={16} />{mode === 'sign-up' ? 'Creating account…' : 'Signing in…'}</> : <>{mode === 'sign-up' ? 'Create account' : 'Sign in'}<ArrowRight size={16} /></>}</button>
     </form>
-    {config.passwordSignup ? <p className="auth-switch muted">{mode === 'sign-up' ? 'Already have an account?' : 'New to Vitamin-C?'} <button className="text-button" type="button" disabled={busy} onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setPassword(''); setError('') }}>{mode === 'sign-up' ? 'Sign in' : 'Create account'}</button></p> : <p className="auth-switch muted">{config.google ? 'Use your Vitamin-C Google account to join the workspace.' : 'Team Google sign-in is awaiting setup. Existing accounts can sign in above.'}</p>}
+    {config.passwordSignup && <p className="auth-switch muted">{mode === 'sign-up' ? 'Already have an account?' : 'New to Vitamin-C?'} <button className="text-button" type="button" disabled={busy} onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setPassword(''); setError('') }}>{mode === 'sign-up' ? 'Sign in' : 'Create account'}</button></p>}
   </div></main>
 }

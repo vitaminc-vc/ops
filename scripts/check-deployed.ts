@@ -9,7 +9,7 @@ import { emailKnowledgeClient, retrieveEmailSources } from '../src/server/knowle
 config({path:'.env.local',quiet:true})
 const base=process.env.QA_BASE_URL || 'https://vitamin-c-platform-production.up.railway.app'
 const qa=JSON.parse(await readFile('.private/demo-qa.json','utf8'))
-assert.match(qa.email,/^vitamin-c-demo-qa-[a-f0-9-]+@example\.invalid$/)
+assert.match(qa.email,/^vitamin-c-demo-qa-[a-f0-9-]+@(?:example\.invalid|vitaminc\.vc)$/)
 const pool=getPool(),messageId='fab'+randomBytes(8).toString('hex'),id='vitaminc_luke_gmail_'+messageId
 const companyName='QAVerdant'+randomBytes(5).toString('hex')
 const companyWebsite=`https://${companyName.toLowerCase()}.example.invalid`
