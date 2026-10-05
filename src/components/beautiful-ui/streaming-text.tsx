@@ -7,7 +7,7 @@ import type { Source } from '@/lib/mock-data'
 import { IconButton } from '../ui'
 import { EmailEvidence } from '../email-evidence'
 import { SourceLogo } from '../source-logo'
-import { sourceTitle } from '@/lib/source-presentation'
+import { citedSources, sourceTitle } from '@/lib/source-presentation'
 
 type MarkdownNode = { type:string;value?:string;url?:string;children?:MarkdownNode[] }
 function remarkCitations(options:{count:number}) {
@@ -31,6 +31,7 @@ export default function StreamingText({ text, streaming, evidence, sources, foll
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reduced = useReducedMotion()
   const citations=useMemo(()=>[[remarkCitations,{count:sources.length}]] as [typeof remarkCitations,{count:number}][],[sources.length])
+  const referencedSources=useMemo(()=>citedSources(text,sources),[text,sources])
   const legacy=evidence && /^I found (this email|these emails)/.test(text)
   const components=useMemo(()=>({
     img:()=>null,
@@ -47,9 +48,9 @@ export default function StreamingText({ text, streaming, evidence, sources, foll
   }),[sources,onSource])
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
   return <div className="streaming-answer"><div className="markdown">{legacy?<p>Relevant correspondence</p>:<Streamdown mode="streaming" isAnimating={streaming} animated={reduced?false:{animation:'fadeIn',duration:120,stagger:5,maxBacklogMs:120}} skipHtml components={components} remarkPlugins={citations} controls={false} disableAutolinkProtocols={['http','https','mailto']} urlTransform={url=>/^#source-\d+$/.test(url)?url:''}>{text}</Streamdown>}{streaming && <span className="stream-cursor" aria-hidden="true" />}</div>
-    {!streaming && sources.some(source=>source.provider==='Gmail') && <div className="email-source-cards">{sources.map(source=>source.provider==='Gmail'?<EmailEvidence key={source.id} source={source}/>:null)}</div>}
+    {!streaming && referencedSources.some(source=>source.provider==='Gmail') && <div className="email-source-cards">{referencedSources.map(source=>source.provider==='Gmail'?<EmailEvidence key={source.id} source={source}/>:null)}</div>}
     {!streaming && <motion.div initial={{ opacity: reduced ? 1 : 0 }} animate={{ opacity: 1 }} transition={{ duration: .15 }}>
-      {sources.some(source=>source.provider!=='Gmail') && <div className="answer-sources">{sources.filter(source=>source.provider!=='Gmail').map(source => <button type="button" className="source-chip" key={source.id} onClick={() => onSource(source)}><SourceLogo provider={source.provider}/><span className="source-title">{sourceTitle(source.title)}</span><ArrowUpRight size={11} /></button>)}</div>}
+      {referencedSources.some(source=>source.provider!=='Gmail') && <div className="answer-sources">{referencedSources.filter(source=>source.provider!=='Gmail').map(source => <button type="button" className="source-chip" key={source.id} onClick={() => onSource(source)}><SourceLogo provider={source.provider}/><span className="source-title">{sourceTitle(source.title)}</span><ArrowUpRight size={11} /></button>)}</div>}
       <div className="answer-actions"><IconButton aria-label={copied ? 'Answer copied' : 'Copy answer'} onClick={() => { setCopyError(''); void navigator.clipboard.writeText(text).then(() => { setCopied(true); timer.current = setTimeout(() => setCopied(false), 1800) }).catch(() => setCopyError('Could not copy. Select the answer and copy it manually.')) }}>{copied ? <Check /> : <Copy />}</IconButton><IconButton aria-label="Retry response" onClick={onRetry}><RotateCcw /></IconButton><IconButton aria-label="Helpful answer" aria-pressed={feedback === 'up'} onClick={() => setFeedback(feedback === 'up' ? null : 'up')}><ThumbsUp /></IconButton><IconButton aria-label="Unhelpful answer" aria-pressed={feedback === 'down'} onClick={() => setFeedback(feedback === 'down' ? null : 'down')}><ThumbsDown /></IconButton><span className="sr-only" aria-live="polite">{copied ? 'Answer copied.' : feedback ? 'Feedback recorded.' : ''}</span></div>
       {copyError && <p role="alert" className="field-error">{copyError}</p>}
       {followUps.length > 0 && <div className="follow-ups">{followUps.map(question => <button key={question} type="button" onClick={() => onFollowUp(question)}>{question}<ArrowUpRight size={13} /></button>)}</div>}

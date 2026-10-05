@@ -115,7 +115,7 @@ h2,h3 { font-size:13px; line-height:20px; font-weight:500; }
 .email-evidence-content h3 { font-size:12px; font-weight:500; margin-bottom:8px; overflow-wrap:anywhere; }
 .email-body { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; line-height:21px; color:var(--ink-2); }
 .email-retry { font:inherit; color:var(--ink); text-decoration:underline; text-underline-offset:3px; }
-.email-dialog { width:min(650px,calc(100vw - 32px)); }
+.dialog.email-dialog { width:min(960px,calc(100vw - 32px)); }
 .email-dialog .dialog-body { padding:0; }
 .email-evidence-full { border:0; border-radius:0; box-shadow:none; }
 .email-evidence-full .email-evidence-header { padding:20px 24px; }
@@ -569,3 +569,15 @@ h2,h3 { font-size:13px; line-height:20px; font-weight:500; }
 .company-page .integration-section .company-metrics { margin:18px 0; }
 
 .runs-links{display:flex;gap:12px;flex-wrap:wrap}.run-list{overflow:hidden}.run-row{display:flex;width:100%;justify-content:space-between;align-items:center;gap:24px;padding:16px 20px;border:0;border-bottom:1px solid var(--border,#e8e8e5);background:transparent;text-align:left;font:inherit}.run-row:last-child{border-bottom:0}.run-row strong,.run-row small{display:block}.run-row strong{font-size:13px;font-weight:500}.run-row small{font-size:12px;color:#737370;margin-top:4px}.run-row[aria-pressed=true]{background:#f3f3f0}.run-result{padding:24px;margin-top:20px;overflow-wrap:anywhere}.run-result h2{font-size:18px}.company-source{padding:8px 20px;margin-bottom:16px}.document-row{display:flex;align-items:center;gap:10px;padding:12px 0;color:inherit}.data-table-scroll{overflow:auto;margin-top:16px;max-height:640px}.workspace-table{width:100%;border-collapse:collapse;font-size:13px}.workspace-table th,.workspace-table td{padding:12px 16px;text-align:left;border-bottom:1px solid #e8e8e5;white-space:nowrap}.workspace-table th{font-weight:500;background:#fafaf8;position:sticky;top:0}@media(max-width:650px){.run-row{align-items:flex-start;gap:12px}.run-row>span:first-child{min-width:0;overflow-wrap:anywhere}.run-result{padding:16px}}
+
+.email-reference { border-radius:12px; overflow:hidden; }
+.email-reference summary { display:flex; align-items:center; gap:12px; padding:13px 16px; cursor:pointer; list-style:none; }
+.email-reference summary::-webkit-details-marker { display:none; }
+.email-reference summary:focus-visible { outline:2px solid var(--ink-3); outline-offset:-3px; }
+.email-reference-title { display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; }
+.email-reference-title strong { font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.email-reference-title small,.email-reference-action { color:var(--ink-3); font-size:11px; }
+.email-reference-action { flex-shrink:0; }
+.email-reference-chevron { flex-shrink:0; }
+.email-reference[open] .email-reference-chevron { transform:rotate(180deg); }
+.email-reference-body { max-height:420px; overflow:auto; border-top:.5px solid var(--line); }
