@@ -1,6 +1,6 @@
 /* Adapted from Beautiful UI SidebarNav. Copyright (c) 2026 Shane Levine. MIT; see THIRD_PARTY_NOTICES.md. */
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
-import { Brain, ChartNoAxesCombined, LogOut, Network, PanelLeftClose, PanelLeftOpen, Plug, Search, Settings2, SquarePen, Users, X, Telescope, ClipboardCheck, Building2 } from 'lucide-react'
+import { Brain, ChartNoAxesCombined, LogOut, Network, PanelLeftClose, PanelLeftOpen, Plug, Search, Settings2, SquarePen, Users, X, Telescope, Building2 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useState } from 'react'
 import { usePlatform } from '@/lib/platform-context'
@@ -13,7 +13,6 @@ const navigation = [
   { to: '/' as const, label: 'Vitamin-C brain', icon: Brain },
   { to: '/portfolio' as const, label: 'Portfolio management', icon: ChartNoAxesCombined },
   { to: '/scout' as const, label: 'Deal Flow Scout', icon: Telescope },
-  { to: '/assessments' as const, label: 'Startup Assessment', icon: ClipboardCheck },
   { to: '/companies' as const, label: 'Companies and documents', icon: Building2 },
   { to: '/lp' as const, label: 'LP Engine', icon: Network },
 ]
@@ -37,7 +36,7 @@ export default function SidebarNav() {
       <div className="sidebar-brand-row"><Link to="/" className="brand" aria-label="Vitamin-C home"><span className="brand-mark">V<sup>°</sup></span><span className="sidebar-copy">Vitamin-C</span></Link><IconButton className="sidebar-collapse" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}</IconButton></div>
       <nav className="sidebar-nav" onMouseLeave={() => setHover(null)} aria-label="Platform">
         <button className="sidebar-row new-chat" onClick={startChat} aria-label="New chat" onMouseEnter={() => setHover('new')}><SquarePen /><span className="sidebar-copy">New chat</span>{hover === 'new' && <motion.span className="glide" layoutId="sidebar-glide" transition={{ duration: reduced ? 0 : .16 }} />}</button>
-        <div className="nav-group">{navigation.filter(item => !['/lp','/scout','/assessments','/companies'].includes(item.to) || canUseLP(user.role)).map(item => {
+        <div className="nav-group">{navigation.filter(item => !['/lp','/scout','/companies'].includes(item.to) || canUseLP(user.role)).map(item => {
           const active = item.to === '/' ? path === '/' : path.startsWith(item.to)
           return <Link key={item.to} to={item.to} className={`sidebar-row ${active ? 'selected' : ''}`} aria-label={item.label} aria-current={active ? 'page' : undefined} onMouseEnter={() => setHover(item.to)}><item.icon /><span className="sidebar-copy">{item.label}</span>{hover === item.to && <motion.span className="glide" layoutId="sidebar-glide" transition={{ duration: reduced ? 0 : .16 }} />}</Link>
         })}</div>

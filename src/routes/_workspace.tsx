@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { getCurrentUser } from '@/lib/session'
 import { AuthProvider } from '@/lib/auth-provider'
 import { PlatformProvider } from '@/lib/platform-store'
+import { PortfolioProvider } from '@/lib/portfolio-context'
 import { AppShell } from '@/components/app-shell'
 
 export const Route = createFileRoute('/_workspace')({
@@ -14,5 +15,5 @@ export const Route = createFileRoute('/_workspace')({
 })
 function Workspace() {
   const { user } = Route.useRouteContext()
-  return <AuthProvider user={user}><PlatformProvider key={`${user.id}:${user.role}`}><AppShell><Outlet /></AppShell></PlatformProvider></AuthProvider>
+  return <AuthProvider user={user}><PlatformProvider key={`${user.id}:${user.role}`}><PortfolioProvider><AppShell><Outlet /></AppShell></PortfolioProvider></PlatformProvider></AuthProvider>
 }

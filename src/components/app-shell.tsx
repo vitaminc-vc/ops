@@ -10,7 +10,7 @@ import { sourceTitle } from '../lib/source-presentation'
 export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: s => s.location.pathname })
   const { source, setSource } = usePlatform()
-  const title = path.startsWith('/portfolio') ? 'Portfolio management' : path.startsWith('/lp') ? 'LP Engine' : path === '/team' ? 'Team access' : path==='/scout'?'Deal Flow Scout':path==='/assessments'?'Startup Assessment':path==='/companies'?'Companies and documents':path==='/connectors'?'Connected Sources':path==='/settings'?'Settings':'Vitamin-C brain'
+  const title = path.startsWith('/portfolio') ? 'Portfolio management' : path.startsWith('/lp') ? 'LP Engine' : path === '/team' ? 'Team access' : path==='/scout'?'Deal Flow Scout':path==='/companies'?'Companies and documents':path==='/connectors'?'Connected Sources':path==='/settings'?'Settings':'Vitamin-C brain'
   useEffect(() => { document.title = `${title} · Vitamin-C` }, [title])
   return <div className="app-shell"><SidebarNav /><div className="workspace">
     <main className="workspace-main">{children}</main>

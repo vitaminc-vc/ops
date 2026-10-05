@@ -1,16 +1,12 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, ArrowUpRight, Download, FileText, NotebookPen, RefreshCw, Search } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import type { PortfolioCompany, PortfolioResult } from '../lib/integration-types'
+import { useState } from 'react'
+import { usePortfolio } from '../lib/portfolio-context'
+import type { PortfolioCompany } from '../lib/integration-types'
 import { usePlatform } from '../lib/platform-context'
 import { Button, Mark, Modal, Picker, Stat } from './ui'
 import { SourceLogo } from './source-logo'
 
-export function usePortfolio() {
-  const [data,setData]=useState<PortfolioResult|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('')
-  const refresh=useCallback(async()=>{setLoading(true);setError('');try{const response=await fetch('/api/portfolio?refresh=1');const data=await response.json();if(!response.ok)throw Error(data.error);setData(data)}catch(error){setError(error instanceof Error?error.message:'The portfolio could not be loaded.')}finally{setLoading(false)}},[])
-  useEffect(()=>{void refresh();const timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh()},60_000);return ()=>clearInterval(timer)},[refresh]);return {data,loading,error,refresh}
-}
 const number=(value:number|null,suffix='')=>value===null?'—':`${value.toLocaleString(undefined,{maximumFractionDigits:2})}${suffix}`
 export function reportedMoney(value:number|null,currency:string|null='EUR') {
   if(value===null)return '—'
@@ -28,7 +24,8 @@ export function PortfolioPage() {
   const companies=data?.companies||[],reported=companies.filter(c=>c.investedEUR!==null),financials=companies.filter(c=>c.financialSourceUrl),missing=companies.filter(c=>!c.financialSourceUrl)
   const filtered=companies.filter(c=>`${c.name} ${c.sector} ${c.country}`.toLowerCase().includes(query.toLowerCase())&&(filter!=='Missing financials'||!c.financialSourceUrl))
   return <div className="page portfolio-page"><header className="page-header"><h1>Portfolio management</h1><div className="page-header-actions"><Button disabled={loading} onClick={()=>void refresh()} aria-label="Refresh portfolio"><RefreshCw/></Button><Button disabled={!data} onClick={()=>setReport(true)}><FileText/>Export figures</Button></div></header>
-    {error?<div className="response-error" role="alert"><p>{error}</p><Button onClick={()=>void refresh()}>Try again</Button></div>:loading&&!data?<p className="muted" role="status">Loading portfolio…</p>:data&&<>
+    {error&&<div className="response-error" role="alert"><p>{error}</p><Button onClick={()=>void refresh()}>Try again</Button></div>}
+    {loading&&!data?<p className="muted" role="status">Loading portfolio…</p>:data&&<>
       <div className="portfolio-provenance"><SourceLogo provider="Airtable"/><span>Airtable</span><span>Fetched {new Date(data.fetchedAt).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</span></div>
       <div className="stats"><Stat label="Portfolio companies" value={companies.length}/><Stat label="Reported capital invested" value={reported.length?reportedMoney(reported.reduce((sum,c)=>sum+c.investedEUR!,0)):'—'} detail={`${reported.length} of ${companies.length} companies reported`}/><Stat label="Companies with financials" value={`${financials.length} / ${companies.length}`} detail="Latest available submissions"/></div>
       {data.warning&&<p className="portfolio-data-note">{data.warning}</p>}
@@ -43,9 +40,9 @@ export function CompanyPage({companyId}:{companyId:string}) {
   const {data,loading,error,refresh}=usePortfolio(),{newChat}=usePlatform(),navigate=useNavigate()
   const company=data?.companies.find(c=>c.id===companyId)
   if(loading&&!data)return <div className="page"><p className="muted" role="status">Loading company…</p></div>
-  if(error||!company)return <div className="page"><Link to="/portfolio" className="back-link"><ArrowLeft/>All companies</Link><div className="response-error" role="alert"><p>{error||'This company is not in the connected portfolio.'}</p><Button onClick={()=>void refresh()}>Try again</Button></div></div>
+  if(!company)return <div className="page"><Link to="/portfolio" className="back-link"><ArrowLeft/>All companies</Link><div className="response-error" role="alert"><p>{error||'This company is not in the connected portfolio.'}</p><Button onClick={()=>void refresh()}>Try again</Button></div></div>
   return <div className="page company-page"><Link to="/portfolio" className="back-link"><ArrowLeft/>All companies</Link><header className="page-header company-header"><div className="company-heading"><Mark name={company.name}/><div><h1>{company.name}</h1><p className="muted small">{[company.sector,company.stage,company.country].filter(Boolean).join(' · ')}</p></div></div><Button className="primary" onClick={()=>{newChat(`Prepare me for my next call with ${company.name}, using its available company record and correspondence.`);void navigate({to:'/'})}}><NotebookPen/>Prepare for a call</Button></header>
-    <div className="company-meta"><span>Legal name <strong>{company.legalName||'Unreported'}</strong></span><span>Founder <strong>{company.founder||'Unreported'}</strong></span>{company.website&&<a href={company.website} target="_blank" rel="noopener noreferrer">Company website<ArrowUpRight/></a>}</div>
+    {error&&<p className="form-error" role="alert">{error}</p>}<div className="company-meta"><span>Legal name <strong>{company.legalName||'Unreported'}</strong></span><span>Founder <strong>{company.founder||'Unreported'}</strong></span>{company.website&&<a href={company.website} target="_blank" rel="noopener noreferrer">Company website<ArrowUpRight/></a>}</div>
     {company.description&&<p className="company-description">{company.description}</p>}
     <div className="company-metrics surface">{[['Capital invested',reportedMoney(company.investedEUR)],['Ownership',number(company.ownershipPercent,'%')],['MOIC',number(company.moic,'×')],['Headcount',number(company.employees)]].map(([label,value])=><div key={label}><span className="caption">{label}</span><strong>{value}</strong></div>)}</div>
     <section className="integration-section"><h2 className="section-caption">Financial reporting</h2>{company.financialSourceUrl?<><p className="muted small">{company.period||'Period unreported'} · {company.reportingCurrency||'Currency unreported'} · Submitted {day(company.submittedAt)}</p><div className="company-metrics surface"><div><span className="caption">Revenue YTD</span><strong>{reportedMoney(company.revenueYTD,company.reportingCurrency)}</strong></div><div><span className="caption">Net cash</span><strong>{reportedMoney(company.netCash,company.reportingCurrency)}</strong></div><div><span className="caption">Runway end</span><strong>{day(company.runwayUntil)}</strong></div></div><a href={company.financialSourceUrl} target="_blank" rel="noopener noreferrer" className="button">View financial submission<ArrowUpRight/></a></>:<div className="company-note surface"><p>No quarterly financial submission is available for this company yet.</p></div>}</section>
