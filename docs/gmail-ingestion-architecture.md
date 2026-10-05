@@ -4,7 +4,7 @@ Current implementation, 5 October 2026. See [demo readiness and owner actions](d
 
 ## Existing mailbox
 
-Vitamin-C n8n reads `luke@vitaminc.vc` using its existing Gmail OAuth credential. A Gmail Message Received trigger wakes the workflow; one daily recovery schedule handles missed/failed work. Empty internal trigger polls do not start the full workflow. Both paths fetch up to 50 unprocessed messages, load every member of their threads, and download attachments.
+The temporary published workflow on the paid `luketestapp` n8n instance reads `luke@vitaminc.vc` using the approved Gmail OAuth grant. The original Vitamin-C workflow is preserved and unpublished until its capacity is restored. A Gmail Message Received trigger wakes the workflow; one daily recovery schedule handles missed/failed work. Empty internal trigger polls do not start the full workflow. Both paths fetch up to 50 unprocessed messages, load every member of their threads, and download attachments.
 
 The replacement workflow calls the deployed app's `/api/ingest/email` with the separate, host-restricted `Vitamin-C screened ingestion` Bearer credential. This credential cannot call admin APIs. The app parses all supported files, screens the entire email/thread/files, then writes approved content and companies to private Supabase tables and the fixed admin-only `vitaminc_email_admin` Supermemory container. Original file bytes remain private and downloadable only by admins. Optional Notion sync creates a company page and attaches files after screening.
 
@@ -26,9 +26,9 @@ The app runs as one Railway instance with a persistent volume for encrypted inte
 
 ## Remaining gates
 
-- Vitamin-C n8n execution capacity and publication/runtime verification of the saved replacement draft.
+- Original Vitamin-C n8n execution capacity for switching back from the verified, active demo copy. Disable the demo before publishing the original.
 - Google web client, Gmail API, consent audience and a real staff authorization test.
 - Notion integration Read/Insert/Update access to the confirmed deal database.
-- Real inbound email delivery and the user-run founder-deck rehearsal.
+- Newly delivered email with a deck in the user-run rehearsal. The existing fictional email passed the complete n8n path; file extraction and deployed attachment ingestion passed separately.
 
 Provider references: [Google web OAuth](https://developers.google.com/identity/protocols/oauth2/web-server), [Gmail scopes](https://developers.google.com/workspace/gmail/api/auth/scopes), [n8n Gmail operations](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.gmail/message-operations/).

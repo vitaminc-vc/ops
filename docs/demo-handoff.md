@@ -10,7 +10,7 @@ Updated 5 October 2026. Rehearsal and sending the founder email are reserved for
 | --- | --- | --- |
 | Shared deployment | Running in Burton Algorithms → vitamin-c → vitamin-c-platform; persistent encrypted settings on `/data`; existing Better Auth sign-in tested over HTTPS. | Luke can use his existing account. |
 | Company and deck storage | Private Supabase tables applied with RLS. Live synthetic deck created a company, stored the original file and slide notes, downloaded privately, indexed in Supermemory and was retrieved through the Brain. The fixture was removed. | Ready at the app ingestion endpoint. |
-| Gmail automation | Replacement graph saved in Vitamin-C n8n with complete thread/file retrieval and the restricted app-service credential. The old unscreened workflow is unpublished. | **Vitamin-C n8n owner:** restore execution capacity for `vitaminc-vc.app.n8n.cloud`. Then publish the prepared draft and run its recovery check. The upgraded `luketestapp` instance is a different instance; Luke is a Member in Vitamin-C. |
+| Gmail automation | Temporary copy is **published and active on the paid `luketestapp` instance**, connected to `luke@vitaminc.vc`. Trigger test and complete processing of the existing fictional EmberGrid email passed: full thread → screening → Supabase company → Brain indexing/retrieval → Gmail result label. Normal recovery then skipped the processed email. | Ready for Luke's founder-deck rehearsal. **Vitamin-C n8n owner:** restore the original instance's capacity, then use the switch-back steps below. Original workflow is preserved and unpublished. |
 | HR screening | Enforced before email/file content is stored or sent to Supermemory. All 43 live model cases passed; deployed synthetic HR PDF was excluded without stored text/files. Unreadable or uncertain content is held. | Keep enforcement on. Review unsupported/image-only files separately. |
 | Staff Google sign-in + Gmail | Better Auth Google sign-in, verified `@vitaminc.vc` restriction, encrypted tokens and own-mailbox connection are implemented. Connected Sources is available to signed-in staff. | **Vitamin-C Google owner:** provide the OAuth web client / project and approve Gmail API scope. Configure the callback below, activate the connected-mailbox schedule, then verify a real staff grant. Not live yet. |
 | Notion companies/decks | Company creation, matching and file upload code is deployed. The target ID was found in the Claude Scout instructions; no integration token is configured. | **Notion owner:** confirm the target database and share it with an integration having Read, Insert and Update content. Add its secret in Connected Sources. Until then, companies/files remain in Supabase and Notion shows awaiting setup. |
@@ -39,11 +39,27 @@ The Scout source references `24fc4749d20e803fb4abda88b3bc06f1`. Confirm this is 
 
 Passed: TypeScript, production build, integration/source unit checks, private database/ingestion tests, actual n8n Code-node fixture checks, 43/43 live screening cases, authenticated streaming, source/role/origin checks, deployed Better Auth login, Airtable/LP readback, HR PDF exclusion, and live PPTX/notes → company → private download → Supermemory indexing/retrieval → duplicate retry.
 
-PDF, PPTX, DOCX, TXT, CSV and Markdown extraction is implemented. Office chart data and embedded XLSX text (including hidden sheets and comments) are included in extraction and screening. Oversized, unreadable, unsupported or image-only content is held for review; it is not silently admitted. Individual files are limited to 15 MiB and the request to 24 MB. URLs requiring access are left unprocessed. n8n delivery, actual Google consent, Notion upload, full Scout research and live Attio research are **not** claimed as verified.
+PDF, PPTX, DOCX, TXT, CSV and Markdown extraction is implemented. Office chart data and embedded XLSX text (including hidden sheets and comments) are included in extraction and screening. Oversized, unreadable, unsupported or image-only content is held for review; it is not silently admitted. Individual files are limited to 15 MiB and the request to 24 MB. URLs requiring access are left unprocessed. The actual n8n Gmail grant, trigger execution and full existing-email processing path are verified. Attachment extraction and the deployed attachment endpoint passed separately; a newly delivered email with a deck remains Luke's rehearsal. Staff Better Auth Google consent, Notion upload, full Scout research and live Attio research are **not** claimed as verified.
 
 The production PDF check caught missing Linux native dependencies. The Docker build now includes both the PDF worker and platform canvas binary; the repaired Railway deployment passed.
 
 n8n execution payload storage is disabled for successes, failures, manual runs and progress. Minimal screening receipts remain in the private app database. This does not promise zero provider retention: screening uses the configured OpenAI provider with `store:false`.
+
+## Temporary n8n demo and switch-back
+
+- Active demo: [Vitamin-C · Demo email and deck ingestion](https://luketestapp.app.n8n.cloud/workflow/Yxk3ETq1VaFaARZD), published version `a1e1410c-1371-4c83-b6e9-bfb97e5bdfce`.
+- Preserved original: [Vitamin-C · Inbound email to Brain](https://vitaminc-vc.app.n8n.cloud/workflow/nQZOH7AFAwTHkjkf), screened draft, unpublished.
+- The paid Starter upgrade belongs to `luketestapp`; it did not change the original Vitamin-C instance's execution quota. No original workflow or data was replaced.
+- The active export passed the 21-node graph checks, all Gmail/service credential assignments, normal inbox filter, no pinned data, bounded indexing waits and disabled execution payload retention. The service credential permits only the deployed app hostname. Daily recovery uses the demo instance's America/Chicago timezone (06:00); Gmail polls internally every minute.
+
+When Vitamin-C capacity is restored:
+
+1. Verify a trigger-only test on the original instance succeeds.
+2. Unpublish the temporary copy and let any running execution finish.
+3. Publish the saved screened draft on Vitamin-C.
+4. Run recovery and verify the processing receipt. If there is no pending email, verify successful empty recovery and the next legitimate incoming email.
+
+Both workflows use the same app/database, stable message IDs and Gmail result labels. No company or deck data needs to move. Keep only one instance active.
 
 ## Operator commands
 

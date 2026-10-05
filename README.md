@@ -69,7 +69,7 @@ Schema changes use `npm run db:generate`, followed by reviewing the generated SQ
 
 The shared app runs in Burton Algorithms' Railway workspace at https://vitamin-c-platform-production.up.railway.app. See [current readiness, verification and owner actions](docs/demo-handoff.md).
 
-Approved founder emails and supported attachments are screened before storage in private Supabase tables and Supermemory. Companies and original files are available to admins. The n8n replacement draft reads complete threads and attachments; the old unscreened workflow is unpublished. Execution capacity on the Vitamin-C instance is still required before publication and live delivery verification.
+Approved founder emails and supported attachments are screened before storage in private Supabase tables and Supermemory. Companies and original files are available to admins. The temporary n8n copy is published on the paid `luketestapp` instance and reads complete threads and attachments. Its Gmail trigger and full existing-email path passed, including company storage, Brain indexing/retrieval and Gmail labeling. The original Vitamin-C workflow remains preserved and unpublished for switching back after its capacity is restored.
 
 Portfolio management reads the approved Airtable base directly (one company, no financial submissions at verification). LP Engine displays the actual 405-entry Claude project snapshot, clearly dated; live Attio research is awaiting its sources. Startup assessment and Scout pages store run history and use the imported Claude rubrics. Scout is blocked until the full Notion pipeline can be checked.
 
@@ -87,6 +87,6 @@ The new auth UI was verified at desktop and 390px widths: invalid credentials, s
 
 ## Email knowledge pilot
 
-See [the n8n setup and verification notes](integrations/n8n/README.md). The replacement cloud workflow calls the shared Railway app. It awaits Vitamin-C n8n capacity; the app keeps its Supermemory key server-side.
+See [the n8n setup and verification notes](integrations/n8n/README.md). The active demo cloud workflow calls the shared Railway app; the app keeps its Supermemory key server-side. Switch-back steps and outstanding owner actions are in [demo readiness](docs/demo-handoff.md).
 
 Local QA evidence in `artifacts/`, credentials in `.env.local`, and encrypted integration state and workflow exports in `.private/` are ignored by Git. Handoff documents refer to local evidence that is not included in a fresh clone.
