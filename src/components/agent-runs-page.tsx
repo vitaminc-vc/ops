@@ -8,7 +8,7 @@ type Run={id:string;kind:Kind;status:string;request:string;result:string|null;cr
 type Data={runs:Run[];readiness:Record<Kind,{ready:boolean;reason:string;source?:string}>;lp:{records:{id:string;name:string;company:string;status:string;owner:string;investorType:string}[];source?:string;latestSourceChange:string|null}}
 export function AgentRunsPage({kind,title}:{kind:Kind;title:string}){
   const[data,setData]=useState<Data|null>(null),[error,setError]=useState(''),[request,setRequest]=useState(''),[busy,setBusy]=useState(false),[selected,setSelected]=useState<string|null>(null),[query,setQuery]=useState('')
-  const refresh=useCallback(async()=>{try{const r=await fetch('/api/agent-runs'),v=await r.json();if(!r.ok)throw Error(v.error||'Runs are unavailable.');setData(v)}catch(e){setError(e instanceof Error?e.message:'Runs are unavailable.')}},[])
+  const refresh=useCallback(async()=>{try{const r=await fetch('/api/agent-runs'),v=await r.json();if(!r.ok)throw Error(v.error||'Runs are unavailable.');setData(v);setError('')}catch(e){setError(e instanceof Error?e.message:'Runs are unavailable.')}},[])
   useEffect(()=>{void refresh();const timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh()},10_000);return()=>clearInterval(timer)},[refresh])
   const start=async()=>{setBusy(true);setError('');try{const r=await fetch('/api/agent-runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,request})}),v=await r.json();if(!r.ok)throw Error(v.error);setSelected(v.id);await refresh()}catch(e){setError(e instanceof Error?e.message:'The run failed.');await refresh()}finally{setBusy(false)}}
   const runs=data?.runs.filter(r=>r.kind===kind)||[],active=runs.find(r=>r.id===selected),ready=data?.readiness[kind]
