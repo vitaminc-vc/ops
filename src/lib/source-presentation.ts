@@ -1,3 +1,5 @@
+import type { Source } from './mock-data'
+
 export function sourceTitle(title: string) {
   return title.replace(/^\s*\[(?:Vitamin-C\s+)?ingestion\s+test\]\s*/i, '').replace(/^\s*\[test\]\s*/i, '').trim() || 'Email'
 }
@@ -39,3 +41,9 @@ export function emailBody(content: string) {
   return readable.split(/\n\n/).map(paragraph=>/^Best,\n/.test(paragraph)?paragraph.trim():paragraph.replace(/\n(?![•>])/g,' ').replace(/[ \t]+/g,' ').trim()).join('\n\n')
 }
 export const isSampleEmail=(text:string)=>/VC-EMAIL-20260930-EMBERGRID/i.test(text)
+
+// Keep original citation numbers: filtering the footer must not renumber inline references.
+export function citedSources(text: string, sources: Source[]) {
+  const cited = new Set([...text.replace(/```[\s\S]*?```|`[^`]*`/g, '').matchAll(/\[(\d{1,2})\]/g)].map(match => Number(match[1]) - 1))
+  return sources.filter((_, index) => cited.has(index))
+}

@@ -65,26 +65,17 @@ Schema changes use `npm run db:generate`, followed by reviewing the generated SQ
 - Keyboard-accessible dialogs and pickers, white focused fields, compact mobile layouts, and reduced motion styles.
 - Sign-in/signup/sign-out, protected workspace routes and chat API, authenticated account identity, admin/scout gates, and an admin account-management page.
 
-## Current data boundary
+## Current deployment and data
 
-The portfolio reads the approved Vitamin-C Airtable base. Currently it contains one company and no quarterly financial submissions; missing or invalid values remain unreported. The Brain uses live OpenAI Responses/Luna answers with citations from authorized email, thesis and company sources. There is no canned-answer fallback. “Thinking” shows workflow activity, not a model’s private reasoning.
+The shared app runs in Burton Algorithms' Railway workspace at https://vitamin-c-platform-production.up.railway.app. See [current readiness, verification and owner actions](docs/demo-handoff.md).
 
-Gmail email text is connected through n8n and Supermemory. The full indexed email appears in clean source cards; attachment metadata is shown when available, but attachment contents are not ingested. Notion import awaits owner access. Additional Gmail onboarding will use our own Google OAuth and n8n ingestion; it is disabled until that setup is configured. Supermemory native connectors are not used. Current Claude project instructions remain unavailable. Email screening passed synthetic QA and stays off in the live ingestion flow. Granola, Drive, Attio, Novata and LinkedIn are not connected to this app. LP CSV lists, introduction drafts and pipeline changes remain local; no messages are sent. See [integration implementation and verification](docs/integration-handoff.md).
+Approved founder emails and supported attachments are screened before storage in private Supabase tables and Supermemory. Companies and original files are available to admins. The temporary n8n copy is published on the paid `luketestapp` instance and reads complete threads and attachments. Its Gmail trigger and full existing-email path passed, including company storage, Brain indexing/retrieval and Gmail labeling. The original Vitamin-C workflow remains preserved and unpublished for switching back after its capacity is restored.
 
-LP discovery filters the example dataset by supported locations and connection paths. It does not perform external investor research. Reloading a conversation that was in progress marks it as stopped rather than replaying its previous run.
+Portfolio management reads the approved Airtable base directly (one company, no financial submissions at verification). LP Engine displays the actual 405-entry Claude project snapshot, clearly dated; live Attio research is awaiting its sources. The Brain uses imported assessment guidance; Scout retains its run-history page and imported Claude rubric. Scout is blocked until the full Notion pipeline can be checked.
 
-## Integration seams
+Better Auth Google sign-in and own-mailbox connections are implemented but awaiting the Google web client. Existing password accounts can sign in; password registration is restricted to @vitaminc.vc addresses and creates scout accounts. Notion company/file sync awaits a token with access to the confirmed deal database. Google Drive, Granola, Novata and LinkedIn are not connected. The app sends no outreach.
 
-The shared context and provider live in separate modules so React Fast Refresh can retain a stable context during UI development.
-
-- The chat retains typed loading, thinking, tool, sources, delta, and done events. Email retrieval is in `src/server/knowledge.ts`, authorized source composition in `src/server/workspace-knowledge.ts`, and live synthesis in `src/server/live-answer.ts`.
-- Replace user-scoped browser storage in `src/lib/platform-store.tsx` with durable database workspace persistence.
-- The portfolio uses `src/server/airtable.ts`; investor records still need their approved source-of-record connection.
-- Move encrypted local connector/settings storage to shared durable storage before multi-instance deployment.
-- Add authenticated document ingestion and entity association before treating uploads as indexed knowledge.
-- The entire first email pilot is admin-only. Scouts cannot retrieve this mailbox. Introduce separately approved containers before sharing selected knowledge with scouts.
-
-The Supabase schema, restricted server connection, and Better Auth flow are configured and verified live. `luke@vitaminc.vc` is registered with verified admin access. The n8n inbound-email automation is configured with one container-scoped Supermemory key shared by n8n and the server. Its Gmail-trigger version is published, but live execution verification remains blocked by the n8n execution allowance. Deployment and external outreach beyond the explicitly requested founder simulation are not configured.
+Encrypted integration configuration uses a persistent Railway volume and supports one app instance. Better Auth, companies, files, mailbox registrations and runs use private Supabase schemas. Email/LP/admin routes enforce current server-side roles; clients cannot choose arbitrary memory containers. Chat history remains user-scoped browser storage.
 
 ## Verification
 
@@ -96,6 +87,6 @@ The new auth UI was verified at desktop and 390px widths: invalid credentials, s
 
 ## Email knowledge pilot
 
-See [the n8n setup and verification notes](integrations/n8n/README.md). The cloud workflow polls independently of the local development server. The Brain runs locally and needs its server-only Supermemory key.
+See [the n8n setup and verification notes](integrations/n8n/README.md). The active demo cloud workflow calls the shared Railway app; the app keeps its Supermemory key server-side. Switch-back steps and outstanding owner actions are in [demo readiness](docs/demo-handoff.md).
 
 Local QA evidence in `artifacts/`, credentials in `.env.local`, and encrypted integration state and workflow exports in `.private/` are ignored by Git. Handoff documents refer to local evidence that is not included in a fresh clone.

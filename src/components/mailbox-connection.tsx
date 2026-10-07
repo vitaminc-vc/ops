@@ -1,0 +1,12 @@
+import { useEffect, useState } from 'react'
+import { authClient } from '../lib/auth-client'
+import { Button } from './ui'
+type Overview = { oauth: boolean; grantReady: boolean; ingestionReady: boolean; connections: {id:string;email:string;status:string;last_sync:string|null;last_error:string|null}[] }
+export function MailboxConnection() {
+  const [data,setData]=useState<Overview|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false)
+  const action=async(action:string,id?:string)=>{setBusy(true);setError('');try{const r=await fetch('/api/mailboxes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,id})}),v=await r.json();if(!r.ok)throw Error(v.error);setData(v)}catch(e){setError(e instanceof Error?e.message:'Connection failed.')}finally{setBusy(false)}}
+  useEffect(()=>{void fetch('/api/mailboxes').then(async r=>{const v=await r.json();if(!r.ok)throw Error(v.error);setData(v);if(new URLSearchParams(window.location.search).get('gmail')==='connected'&&v.grantReady&&v.ingestionReady){window.history.replaceState(null,'','/connectors');void action('activate')}}).catch(e=>setError(e.message))},[])
+  return <section className="integration-section"><h2 className="section-caption">Your Gmail</h2><div className="settings-panel surface"><p>Connect your Vitamin-C mailbox. Approved email knowledge is available to workspace admins.</p>{data?.connections.map(c=><div className="setting-access-row" key={c.id}><span><strong>{c.email}</strong><small>{c.status==='connected'?'Connected':c.status==='disconnected'?'Disconnected':'Needs attention'}{c.last_sync?` · Last checked ${new Date(c.last_sync).toLocaleString()}`:''}</small></span>{c.status==='connected'&&<Button disabled={busy} onClick={()=>void action('disconnect',c.id)}>Disconnect</Button>}</div>)}
+    {data && (!data.oauth||!data.ingestionReady)?<p className="connection-help">Gmail connection is awaiting workspace setup.</p>:data&&<div className="dialog-actions"><Button disabled={busy} onClick={()=>{setBusy(true);void authClient.linkSocial({provider:'google',scopes:['https://www.googleapis.com/auth/gmail.readonly'],callbackURL:'/connectors?gmail=connected',errorCallbackURL:'/connectors'}).then(r=>{if(r.error)throw Error(r.error.message)}).catch(e=>{setError(e.message);setBusy(false)})}}>Connect Gmail</Button>{data.grantReady&&<Button disabled={busy} onClick={()=>void action('activate')}>Finish connection</Button>}</div>}
+    {error&&<p className="form-error" role="alert">{error}</p>}</div></section>
+}

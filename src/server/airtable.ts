@@ -58,8 +58,10 @@ export async function getPortfolio(force = false): Promise<PortfolioResult> {
   if (!force && cache?.key===key && cache.until>Date.now()) return cache.data
   if (loading?.key===key) return loading.promise
   const promise = (async () => {
-    const companyRows = await airtableRows(token,companyTable,Object.values(companyFields))
-    const financialRows = await airtableRows(token,financialTable,Object.values(financialFields))
+    const [companyRows, financialRows] = await Promise.all([
+      airtableRows(token,companyTable,Object.values(companyFields)),
+      airtableRows(token,financialTable,Object.values(financialFields)),
+    ])
     const hasInvalid = companyRows.some(r=>Object.values(r.fields).some(v=>v && typeof v==='object' && 'specialValue' in v))
     const data:PortfolioResult = { companies:mapPortfolio(companyRows,financialRows), fetchedAt:new Date().toISOString(), source:'Airtable', ...(hasInvalid ? {warning:'Some Airtable calculations are unavailable. Those figures are shown as unreported.'} : {}) }
     cache = { key, until:Date.now()+60_000, data }; return data

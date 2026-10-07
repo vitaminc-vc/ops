@@ -15,6 +15,13 @@
       "when": 1790627328354,
       "tag": "0001_app_server_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791171649724,
+      "tag": "0002_workspace_ingestion",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,85 @@
+{
+  "name": "Vitamin-C · Connected staff mailboxes",
+  "active": false,
+  "nodes": [
+    {
+      "id": "94917d67-5eed-4085-8bff-a44fa26d8485",
+      "name": "Connected mailbox sync",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8afcae46-72b2-4e23-84ef-2b3c11d887ba",
+      "name": "Sync registered mailboxes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://vitamin-c-platform-production.up.railway.app/api/ingest/sync",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vitamin-C screened ingestion"
+        }
+      }
+    },
+    {
+      "id": "69a18e6e-6390-459f-9c03-20e40c20e5a2",
+      "name": "Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        220
+      ],
+      "parameters": {
+        "content": "## Additional staff mailboxes\nKeep inactive until Google OAuth is configured and GMAIL_SYNC_ENABLED=true. Select the approved Vitamin-C screened ingestion credential.\nThe server refreshes encrypted Better Auth grants, verifies mailbox ownership, reads full threads/files, and applies the same screening pipeline.\nOne invocation handles all connected staff mailboxes. The 30-minute cadence uses approximately 1,440 executions per 30-day month; confirm available capacity before activation.",
+        "height": 320,
+        "width": 560
+      }
+    }
+  ],
+  "connections": {
+    "Connected mailbox sync": {
+      "main": [
+        [
+          {
+            "node": "Sync registered mailboxes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  }
+}

@@ -4,10 +4,10 @@ import { resolve } from 'node:path'
 import type { Connector, IntegrationSettings } from '../lib/integration-types'
 
 export type SourceDocument = { id: string; title: string; text: string; sourceUrl: string; updatedAt: string; connectionId: string }
-export type PrivateState = { version: 1; settings: IntegrationSettings; connections: Connector[]; credentials: Record<string, string>; notionPages: string[]; documents: SourceDocument[] }
+export type PrivateState = { version: 1; settings: IntegrationSettings; connections: Connector[]; credentials: Record<string, string>; notionPages: string[]; documents: SourceDocument[]; agents?: { scout: string; lp: string; sources: Record<string,string>; lpPipelineCsv?: string } }
 const seed = (): PrivateState => ({ version: 1, settings: {
   thesis: { text: 'Impact and returns are inseparable. For Vitamin°C, impact is not a constraint — it is the thesis.\n\nThe fund invests in climate mitigation and human adaptation, targeting the largest climate levers: energy, food and agriculture, and carbon removal. Check size EUR 0.5M–1.5M at pre-seed and seed.\n\nBeyond capital, Vitamin°C connects portfolio companies with academic institutions for rigorous impact validation, funds non-dilutive grants to generate scientific evidence, and pilots blended capital models where venture and philanthropy work in tandem.', assessment: '', sourceUrl: 'https://airtable.com/appiNFlTS3OLfTkxB/pagBQNWm1bFFlfq3J?O9sso=rec8hfLRdxpjsMDU6', updatedAt: '2026-10-01T00:00:00Z', scoutAccess: false },
-  screening: { mode: 'off', model: 'gpt-6-luna', blockedSenders: [], blockedLabels: ['HR', 'Payroll', 'People operations'] }, portfolioScoutAccess: false, notionScoutAccess: false,
+  screening: { mode: 'enforced', model: 'gpt-6-luna', blockedSenders: [], blockedLabels: ['HR', 'Payroll', 'People operations'] }, portfolioScoutAccess: false, notionScoutAccess: false,
 }, connections: [], credentials: {}, notionPages: [], documents: [] })
 
 function storage() {
@@ -32,8 +32,8 @@ export function decryptState(raw: string): PrivateState {
   return state
 }
 export async function readIntegrationState(): Promise<PrivateState> {
-  try { return decryptState(await readFile(resolve(storage(), 'integrations.enc'), 'utf8')) } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return seed()
+  try { const state = decryptState(await readFile(resolve(storage(), 'integrations.enc'), 'utf8')); state.settings.screening.mode = 'enforced'; return state } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') { const bootstrap=process.env.INTEGRATION_BOOTSTRAP_ENCRYPTED || Array.from({length:Math.min(16,Number(process.env.INTEGRATION_BOOTSTRAP_PARTS)||0)},(_,i)=>process.env[`INTEGRATION_BOOTSTRAP_${i+1}`]||'').join(''); const state = bootstrap ? decryptState(bootstrap) : seed(); state.settings.screening.mode = 'enforced'; return state }
     throw error
   }
 }

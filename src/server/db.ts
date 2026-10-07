@@ -23,3 +23,4 @@ export function createDatabase(migration = false) {
 
 let connection: ReturnType<typeof createDatabase> | undefined
 export const getDatabase = () => (connection ??= createDatabase()).db
+export const getPool = () => (connection ??= createDatabase()).pool

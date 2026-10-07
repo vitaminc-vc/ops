@@ -6,14 +6,14 @@ import { eq } from 'drizzle-orm'
 import { user } from '../src/db/schema'
 import { createDatabase } from '../src/server/db'
 config({path:'.env.local',quiet:true})
-const base='http://127.0.0.1:3000', path='.private/demo-qa.json', {db,pool}=createDatabase()
+const base=process.env.QA_BASE_URL||'http://127.0.0.1:3000', path='.private/demo-qa.json', {db,pool}=createDatabase()
 const call=(url:string,cookie='',body?:unknown,origin=base)=>fetch(base+url,{method:body?'POST':'GET',headers:{...(cookie?{cookie}:{}),...(body?{'Content-Type':'application/json',origin}:{})},body:body?JSON.stringify(body):undefined})
 if(process.argv.includes('--cleanup')){
-  const saved=JSON.parse(await readFile(path,'utf8'));assert.match(saved.email,/^vitamin-c-demo-qa-[a-f0-9-]+@example\.invalid$/)
+  const saved=JSON.parse(await readFile(path,'utf8'));assert.match(saved.email,/^vitamin-c-demo-qa-[a-f0-9-]+@(?:example\.invalid|vitaminc\.vc)$/)
   const [stored]=await db.select({email:user.email}).from(user).where(eq(user.id,saved.id));assert.equal(stored?.email,saved.email)
   await db.delete(user).where(eq(user.id,saved.id));await unlink(path);await pool.end();console.log('Only the exact disposable demo QA account was removed.');process.exit(0)
 }
-const marker=randomUUID(), email=`vitamin-c-demo-qa-${marker}@example.invalid`, password=`QA-${randomUUID()}!`
+const marker=randomUUID(), email=`vitamin-c-demo-qa-${marker}@vitaminc.vc`, password=`QA-${randomUUID()}!`
 let id:string|undefined
 try{
   assert.equal((await call('/api/chat','',{prompt:'Hello'})).status,401)

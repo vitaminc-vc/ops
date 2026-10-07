@@ -1,0 +1,647 @@
+{
+  "name": "Vitamin-C · Inbound email to Brain",
+  "nodes": [
+    {
+      "id": "gmail-message-received",
+      "name": "Gmail message received",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -720,
+        -120
+      ],
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": true,
+        "filters": {
+          "readStatus": "both",
+          "includeSpamTrash": false,
+          "includeDrafts": false,
+          "q": "-in:sent -in:drafts -in:spam -in:trash -label:vitamin-c-brain-indexed -label:vitamin-c-brain-excluded -label:vitamin-c-brain-review"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "daily-recovery-scan",
+      "name": "Daily recovery scan",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        120
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 6,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "load-gmail-labels",
+      "name": "Load Gmail labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        0
+      ],
+      "parameters": {
+        "resource": "label",
+        "operation": "getAll",
+        "returnAll": true
+      }
+    },
+    {
+      "id": "unindexed-inbound-email",
+      "name": "Unindexed inbound email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 50,
+        "simple": false,
+        "filters": {
+          "readStatus": "both",
+          "includeSpamTrash": false,
+          "q": "after:1790784720 -in:sent -in:drafts -in:spam -in:trash -label:vitamin-c-brain-indexed -label:vitamin-c-brain-excluded -label:vitamin-c-brain-review"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      }
+    },
+    {
+      "id": "4ced4666-4d77-471b-ad0a-501d182c3596",
+      "name": "Processing labels",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const labels=Object.fromEntries($input.all().map(i=>[i.json.name,i.json.id])); if(!labels['vitamin-c-brain-indexed'])throw new Error('The original indexed label is missing.'); return [{json:{labels}}];"
+      },
+      "position": [
+        650,
+        400
+      ]
+    },
+    {
+      "id": "32ac12d5-0e3e-425a-950d-a372b74a1667",
+      "name": "Load full threads",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "parameters": {
+        "resource": "thread",
+        "operation": "get",
+        "threadId": "={{ $json.threadId }}",
+        "simple": false,
+        "options": {
+          "returnOnlyMessages": false
+        }
+      },
+      "position": [
+        1000,
+        400
+      ]
+    },
+    {
+      "id": "6a5c6917-dee3-402e-82c3-074460d232d3",
+      "name": "Thread message IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const seen=new Set(),out=[];for(const [index,item] of $input.all().entries()){if(!Array.isArray(item.json.messages)||!item.json.messages.length)throw new Error('Thread was incomplete.');for(const mail of item.json.messages){if(!seen.has(mail.id)){seen.add(mail.id);out.push({json:{id:mail.id},pairedItem:{item:index}})}}}return out;"
+      },
+      "position": [
+        1200,
+        400
+      ]
+    },
+    {
+      "id": "78c988da-7f59-48a4-98b8-f6f7ccae446a",
+      "name": "Read full thread messages",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "parameters": {
+        "resource": "message",
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "simple": false,
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "position": [
+        1400,
+        400
+      ]
+    },
+    {
+      "id": "06b2d1c7-b7e3-4e19-a0d8-168a64ebf71d",
+      "name": "Prepare screened email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// n8n Code node: read complete parsed MIME messages and binary attachments.\nconst address = value => typeof value === 'string' ? value : value?.text || value?.value?.map(v => v.address).join(', ') || '';\nconst groups = new Map();\nfor (const [index, item] of $input.all().entries()) {\n  const mail = item.json;\n  if (!/^[a-f0-9]+$/i.test(mail.id || '') || !mail.threadId) throw new Error('Incomplete Gmail message identity.');\n  const thread = groups.get(mail.threadId) || new Map();\n  if (thread.has(mail.id)) continue;\n  const attachments = [];\n  for (const [key, metadata] of Object.entries(item.binary || {})) {\n    const buffer = await this.helpers.getBinaryDataBuffer(index, key);\n    attachments.push({ name: metadata.fileName || key, mimeType: metadata.mimeType || 'application/octet-stream', data: buffer.toString('base64') });\n  }\n  thread.set(mail.id, { mail, attachments }); groups.set(mail.threadId, thread);\n}\nconst result = [];\nfor (const [index, originalItem] of $('Unindexed inbound email').all().entries()) {\n  const original = originalItem.json;\n  if (original.labelIds?.some(label => ['SENT', 'DRAFT', 'SPAM', 'TRASH'].includes(label))) continue;\n  const members = [...(groups.get(original.threadId)?.values() || [])];\n  const originalFull = members.find(member => member.mail.id === original.id)?.mail;\n  if (!originalFull || !members.length) throw new Error('Complete thread could not be loaded.');\n  const body = members.map(({ mail }) => {\n    if (typeof mail.text !== 'string' || !mail.text.trim()) throw new Error('Full message text is missing. Gmail snippets cannot be used for screening.');\n    return `From: ${address(mail.from)}\\nSubject: ${mail.subject || '(No subject)'}\\n\\n${mail.text}`;\n  }).join('\\n\\n----- Thread message -----\\n\\n');\n  const attachments = members.flatMap(member => member.attachments);\n  result.push({ json: { mailbox: 'luke@vitaminc.vc', messageId: original.id, threadId: original.threadId,\n    from: address(originalFull.from), to: address(originalFull.to), subject: String(originalFull.subject || '(No subject)'),\n    body, receivedAt: new Date(originalFull.date).toISOString(), labels: original.labelIds || [], attachments }, pairedItem: { item: 0 } });\n}\nreturn result;\n"
+      },
+      "position": [
+        1600,
+        400
+      ]
+    },
+    {
+      "id": "11c0ad45-f140-43c4-bb8e-f692e9e1a9cc",
+      "name": "Screen and ingest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "method": "POST",
+        "url": "https://vitamin-c-platform-production.up.railway.app/api/ingest/email",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "position": [
+        1800,
+        400
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vitamin-C screened ingestion"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "wait-for-indexing",
+      "name": "Wait for indexing",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        400
+      ],
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "webhookId": "vitaminc-email-indexing"
+    },
+    {
+      "id": "7e51e86e-a90c-4616-afc9-701a93f6e48d",
+      "name": "Check processing status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "url": "={{ 'https://vitamin-c-platform-production.up.railway.app/api/ingest/email?id=' + encodeURIComponent($('Screen and ingest').item.json.id) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "position": [
+        2200,
+        400
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vitamin-C screened ingestion"
+        }
+      }
+    },
+    {
+      "id": "06a5a1e7-ad27-49da-8fc8-9e2ba9c7109b",
+      "name": "Validate processing",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if($json.status==='failed')throw new Error('Processing failed; the next recovery run can retry.');if(!$json.terminal&&$runIndex>=19)throw new Error('Indexing is still pending; the recovery run will check it.');return {json:$json};"
+      },
+      "position": [
+        2400,
+        400
+      ]
+    },
+    {
+      "id": "24d26592-deba-48c2-9b7d-166ccf076f3f",
+      "name": "Processing finished",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "terminal",
+              "leftValue": "={{ $json.terminal }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "position": [
+        2600,
+        400
+      ]
+    },
+    {
+      "id": "483430ec-eb0e-47cc-a016-8d3632d4577b",
+      "name": "Processing receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const original=$('Screen and ingest').item.json;const message=$('Prepare screened email').item.json;const labelNames={indexed:'vitamin-c-brain-indexed',excluded:'vitamin-c-brain-excluded',review:'vitamin-c-brain-review'};const name=labelNames[$json.status];if(!name)throw new Error('Unexpected processing state.');return {json:{gmailMessageId:message.messageId,status:$json.status,labelName:name,labelId:$('Processing labels').first().json.labels[name]||''}};"
+      },
+      "position": [
+        2800,
+        300
+      ]
+    },
+    {
+      "id": "29c7a319-8f73-49a3-ade6-cac4a5f17e4a",
+      "name": "Label exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "label-present",
+              "leftValue": "={{ $json.labelId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "position": [
+        3000,
+        300
+      ]
+    },
+    {
+      "id": "307d6628-47f7-413f-82e3-0ccce1437ff1",
+      "name": "Create result label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "parameters": {
+        "resource": "label",
+        "operation": "create",
+        "name": "={{ $json.labelName }}",
+        "options": {}
+      },
+      "position": [
+        3200,
+        500
+      ],
+      "continueOnFail": true
+    },
+    {
+      "id": "1ced3218-2698-495b-8489-32d23f0a0523",
+      "name": "Reload result labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "parameters": {
+        "resource": "label",
+        "operation": "getAll",
+        "returnAll": true
+      },
+      "position": [
+        3400,
+        500
+      ]
+    },
+    {
+      "id": "9e7171b3-6ec1-4229-a312-babee6c746f5",
+      "name": "Resolve result labels",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const results=[],expected=new Set(),matched=new Set();for(const [index,item] of $input.all().entries()){const receipt=$('Processing receipt').itemMatching(index).json;expected.add(receipt.gmailMessageId);if(item.json.name===receipt.labelName&&!matched.has(receipt.gmailMessageId)){matched.add(receipt.gmailMessageId);results.push({json:{...receipt,labelId:item.json.id},pairedItem:{item:index}})}}if(matched.size!==expected.size)throw new Error('A processing label could not be created.');return results;"
+      },
+      "position": [
+        3600,
+        500
+      ]
+    },
+    {
+      "id": "mark-indexed-in-gmail",
+      "name": "Mark processing result",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3800,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "addLabels",
+        "messageId": "={{ $json.gmailMessageId }}",
+        "labelIds": "={{ [$json.labelId] }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "7a32e7a3-6a73-4f4a-8e91-02cdd46289a4",
+      "name": "Screened ingestion",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Full thread and deck processing\nReads full Gmail threads and attachments. The Vitamin-C service screens every email and file before saving approved content to Supabase and Supermemory.\nUnreadable/uncertain: review label, no content stored. HR: excluded label, no content stored. Indexed label is applied only after Supermemory reports done.\nOne shared Supermemory key stays on the server. The separate ingestion credential permits only screened ingestion and status checks.\nExecution payload storage is disabled to keep HR content out of saved n8n executions.",
+        "height": 400,
+        "width": 560
+      },
+      "position": [
+        1700,
+        650
+      ]
+    }
+  ],
+  "connections": {
+    "Gmail message received": {
+      "main": [
+        [
+          {
+            "node": "Load Gmail labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily recovery scan": {
+      "main": [
+        [
+          {
+            "node": "Load Gmail labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Gmail labels": {
+      "main": [
+        [
+          {
+            "node": "Processing labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processing labels": {
+      "main": [
+        [
+          {
+            "node": "Unindexed inbound email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unindexed inbound email": {
+      "main": [
+        [
+          {
+            "node": "Load full threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load full threads": {
+      "main": [
+        [
+          {
+            "node": "Thread message IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thread message IDs": {
+      "main": [
+        [
+          {
+            "node": "Read full thread messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read full thread messages": {
+      "main": [
+        [
+          {
+            "node": "Prepare screened email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare screened email": {
+      "main": [
+        [
+          {
+            "node": "Screen and ingest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Screen and ingest": {
+      "main": [
+        [
+          {
+            "node": "Wait for indexing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for indexing": {
+      "main": [
+        [
+          {
+            "node": "Check processing status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check processing status": {
+      "main": [
+        [
+          {
+            "node": "Validate processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate processing": {
+      "main": [
+        [
+          {
+            "node": "Processing finished",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processing finished": {
+      "main": [
+        [
+          {
+            "node": "Processing receipt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait for indexing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processing receipt": {
+      "main": [
+        [
+          {
+            "node": "Label exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label exists": {
+      "main": [
+        [
+          {
+            "node": "Mark processing result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create result label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create result label": {
+      "main": [
+        [
+          {
+            "node": "Reload result labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reload result labels": {
+      "main": [
+        [
+          {
+            "node": "Resolve result labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve result labels": {
+      "main": [
+        [
+          {
+            "node": "Mark processing result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 600,
+    "saveExecutionProgress": false
+  }
+}

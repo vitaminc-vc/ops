@@ -1,0 +1,10 @@
+node_modules
+.git
+.env*
+.private
+artifacts
+dist
+.output
+*.log
+connected-sources.png
+demo-readiness-evidence.json

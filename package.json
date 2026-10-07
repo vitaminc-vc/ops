@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 3000",
-    "build": "vite build",
+    "build": "vite build && node scripts/copy-pdf-worker.mjs",
     "typecheck": "tsc --noEmit",
     "check:stream": "node scripts/check-stream.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:check": "tsx scripts/check-db.ts",
     "auth:admin": "tsx scripts/promote-admin.ts",
-    "check:auth": "tsx scripts/check-auth.ts"
+    "check:auth": "tsx scripts/check-auth.ts",
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.6",
@@ -24,8 +25,11 @@
     "better-auth": "1.7.6",
     "dotenv": "17.3.1",
     "drizzle-orm": "0.45.3",
+    "fflate": "0.8.3",
     "lucide-react": "1.48.0",
     "motion": "13.4.4",
+    "nitro": "3.0.260903-beta",
+    "pdf-parse": "2.4.5",
     "pg": "8.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

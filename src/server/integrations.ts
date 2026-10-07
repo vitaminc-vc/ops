@@ -18,18 +18,18 @@ export async function connectorOverview(): Promise<ConnectorOverview> {
   if (!connections.some(c => c.id === 'notion')) connections.push({ id: 'notion', provider: 'notion', name: 'Notion workspace', status: 'disconnected', method: 'Selected pages' })
   // Additional mailboxes will use our Google OAuth and n8n ingestion path.
   // Keep onboarding unavailable until authorization and workflow routing are configured.
-  return { connections, settings: state.settings, capabilities: { oauth: false, screening: !!process.env.OPENAI_API_KEY, airtable: portfolio.status === 'fulfilled', notion: !!connectionSecret(state, 'notion', 'NOTION_API_KEY') }, storage: 'local' }
+  return { connections, settings: state.settings, capabilities: { oauth: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GMAIL_SYNC_ENABLED === 'true'), screening: !!process.env.OPENAI_API_KEY, airtable: portfolio.status === 'fulfilled', notion: !!connectionSecret(state, 'notion', 'NOTION_API_KEY') }, storage: 'local' }
 }
 const text = (value: unknown, limit: number) => { if (typeof value !== 'string' || value.length > limit) throw Error('A field is missing or exceeds its length limit.'); return value.trim() }
 const strings = (value: unknown, limit: number) => { if (!Array.isArray(value) || value.length > limit || value.some(v => typeof v !== 'string' || v.length > 250)) throw Error('Enter a valid exclusion list.'); return [...new Set(value.map(v => v.trim()).filter(Boolean))] as string[] }
 export function validateSettings(value: unknown): IntegrationSettings {
   if (!value || typeof value !== 'object') throw Error('Invalid settings.')
   const v = value as IntegrationSettings
-  if (!v.thesis || !v.screening || v.screening.mode !== 'off' || v.screening.model !== 'gpt-6-luna') throw Error('Live screening must remain off. The screening model is Luna.')
+  if (!v.thesis || !v.screening || v.screening.mode !== 'enforced' || v.screening.model !== 'gpt-6-luna') throw Error('Live screening must remain enforced. The screening model is Luna.')
   if ([v.portfolioScoutAccess, v.notionScoutAccess, v.thesis.scoutAccess].some(b => typeof b !== 'boolean')) throw Error('Choose valid access settings.')
   const sourceUrl = text(v.thesis.sourceUrl, 2000)
   if (sourceUrl && !/^https:\/\//i.test(sourceUrl)) throw Error('Use an HTTPS source URL.')
-  return { portfolioScoutAccess: v.portfolioScoutAccess, notionScoutAccess: v.notionScoutAccess, thesis: { text: text(v.thesis.text, 30_000), assessment: text(v.thesis.assessment, 30_000), sourceUrl, updatedAt: new Date().toISOString(), scoutAccess: v.thesis.scoutAccess }, screening: { mode: 'off', model: 'gpt-6-luna', blockedSenders: strings(v.screening.blockedSenders, 100), blockedLabels: strings(v.screening.blockedLabels, 100) } }
+  return { portfolioScoutAccess: v.portfolioScoutAccess, notionScoutAccess: v.notionScoutAccess, thesis: { text: text(v.thesis.text, 30_000), assessment: text(v.thesis.assessment, 30_000), sourceUrl, updatedAt: new Date().toISOString(), scoutAccess: v.thesis.scoutAccess }, screening: { mode: 'enforced', model: 'gpt-6-luna', blockedSenders: strings(v.screening.blockedSenders, 100), blockedLabels: strings(v.screening.blockedLabels, 100) } }
 }
 export async function saveSettings(value: unknown) {
   const settings=validateSettings(value),revision=(value as IntegrationSettings).thesis.updatedAt
@@ -44,7 +44,7 @@ export async function refreshThesis() {
 }
 export async function connectNotion(value: unknown) {
   const token = text(value, 500)
-  if (!/^(ntn_|secret_)[A-Za-z0-9_-]+$/.test(token)) throw Error('Enter the read-only Notion integration secret.')
+  if (!/^(ntn_|secret_)[A-Za-z0-9_-]+$/.test(token)) throw Error('Enter the Notion integration secret.')
   const resources = await listNotionPages(token)
   await updateIntegrationState(state => {
     state.credentials.notion = token
@@ -54,7 +54,7 @@ export async function connectNotion(value: unknown) {
   })
   return { resources }
 }
-export async function notionResources() { const state = await readIntegrationState(); const token = connectionSecret(state, 'notion', 'NOTION_API_KEY'); if (!token) throw Error('Connect a read-only Notion integration first.'); return { resources: await listNotionPages(token), selected: state.notionPages } }
+export async function notionResources() { const state = await readIntegrationState(); const token = connectionSecret(state, 'notion', 'NOTION_API_KEY'); if (!token) throw Error('Connect a Notion integration first.'); return { resources: await listNotionPages(token), selected: state.notionPages } }
 export async function syncNotion(values: unknown) {
   const ids = strings(values, 20); if (!ids.length) throw Error('Select at least one Notion page or database.')
   const state = await readIntegrationState(), token = connectionSecret(state, 'notion', 'NOTION_API_KEY')

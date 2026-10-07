@@ -1,3 +1,5 @@
+> Historical integration audit. For the deployed implementation, current blockers and owner actions, see [demo readiness](demo-handoff.md).
+
 # Vitamin-C integrations — 4 October 2026
 
 ## Available on the local app

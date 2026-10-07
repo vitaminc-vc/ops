@@ -12,18 +12,29 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspaceRouteImport } from './routes/_workspace'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace.index'
+import { Route as WorkspaceAssessmentsRouteImport } from './routes/_workspace.assessments'
+import { Route as WorkspaceCompaniesRouteImport } from './routes/_workspace.companies'
 import { Route as WorkspaceConnectorsRouteImport } from './routes/_workspace.connectors'
 import { Route as WorkspaceLpRouteImport } from './routes/_workspace.lp'
 import { Route as WorkspacePortfolioRouteImport } from './routes/_workspace.portfolio'
+import { Route as WorkspaceScoutRouteImport } from './routes/_workspace.scout'
 import { Route as WorkspaceSettingsRouteImport } from './routes/_workspace.settings'
 import { Route as WorkspaceTeamRouteImport } from './routes/_workspace.team'
+import { Route as ApiAgentRunsRouteImport } from './routes/api.agent-runs'
+import { Route as ApiAuthConfigRouteImport } from './routes/api.auth-config'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
+import { Route as ApiCompaniesRouteImport } from './routes/api.companies'
+import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as ApiIntegrationsRouteImport } from './routes/api.integrations'
+import { Route as ApiMailboxesRouteImport } from './routes/api.mailboxes'
 import { Route as ApiPortfolioRouteImport } from './routes/api.portfolio'
 import { Route as WorkspacePortfolioIndexRouteImport } from './routes/_workspace.portfolio.index'
 import { Route as WorkspacePortfolioCompanyIdRouteImport } from './routes/_workspace.portfolio.$companyId'
 import { Route as ApiAdminUsersRouteImport } from './routes/api.admin.users'
 import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
+import { Route as ApiDocumentsIdRouteImport } from './routes/api.documents.$id'
+import { Route as ApiIngestEmailRouteImport } from './routes/api.ingest.email'
+import { Route as ApiIngestSyncRouteImport } from './routes/api.ingest.sync'
 import { Route as ApiKnowledgeEmailRouteImport } from './routes/api.knowledge.email'
 
 const WorkspaceRoute = WorkspaceRouteImport.update({
@@ -38,6 +49,16 @@ const LoginRoute = LoginRouteImport.update({
 const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceAssessmentsRoute = WorkspaceAssessmentsRouteImport.update({
+  id: '/assessments',
+  path: '/assessments',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceCompaniesRoute = WorkspaceCompaniesRouteImport.update({
+  id: '/companies',
+  path: '/companies',
   getParentRoute: () => WorkspaceRoute,
 } as any)
 const WorkspaceConnectorsRoute = WorkspaceConnectorsRouteImport.update({
@@ -55,6 +76,11 @@ const WorkspacePortfolioRoute = WorkspacePortfolioRouteImport.update({
   path: '/portfolio',
   getParentRoute: () => WorkspaceRoute,
 } as any)
+const WorkspaceScoutRoute = WorkspaceScoutRouteImport.update({
+  id: '/scout',
+  path: '/scout',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
 const WorkspaceSettingsRoute = WorkspaceSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -65,14 +91,39 @@ const WorkspaceTeamRoute = WorkspaceTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => WorkspaceRoute,
 } as any)
+const ApiAgentRunsRoute = ApiAgentRunsRouteImport.update({
+  id: '/api/agent-runs',
+  path: '/api/agent-runs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthConfigRoute = ApiAuthConfigRouteImport.update({
+  id: '/api/auth-config',
+  path: '/api/auth-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCompaniesRoute = ApiCompaniesRouteImport.update({
+  id: '/api/companies',
+  path: '/api/companies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIntegrationsRoute = ApiIntegrationsRouteImport.update({
   id: '/api/integrations',
   path: '/api/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMailboxesRoute = ApiMailboxesRouteImport.update({
+  id: '/api/mailboxes',
+  path: '/api/mailboxes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPortfolioRoute = ApiPortfolioRouteImport.update({
@@ -101,6 +152,21 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDocumentsIdRoute = ApiDocumentsIdRouteImport.update({
+  id: '/api/documents/$id',
+  path: '/api/documents/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIngestEmailRoute = ApiIngestEmailRouteImport.update({
+  id: '/api/ingest/email',
+  path: '/api/ingest/email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIngestSyncRoute = ApiIngestSyncRouteImport.update({
+  id: '/api/ingest/sync',
+  path: '/api/ingest/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiKnowledgeEmailRoute = ApiKnowledgeEmailRouteImport.update({
   id: '/api/knowledge/email',
   path: '/api/knowledge/email',
@@ -110,33 +176,55 @@ const ApiKnowledgeEmailRoute = ApiKnowledgeEmailRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
   '/login': typeof LoginRoute
+  '/assessments': typeof WorkspaceAssessmentsRoute
+  '/companies': typeof WorkspaceCompaniesRoute
   '/connectors': typeof WorkspaceConnectorsRoute
   '/lp': typeof WorkspaceLpRoute
   '/portfolio': typeof WorkspacePortfolioRouteWithChildren
+  '/scout': typeof WorkspaceScoutRoute
   '/settings': typeof WorkspaceSettingsRoute
   '/team': typeof WorkspaceTeamRoute
+  '/api/agent-runs': typeof ApiAgentRunsRoute
+  '/api/auth-config': typeof ApiAuthConfigRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/companies': typeof ApiCompaniesRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/integrations': typeof ApiIntegrationsRoute
+  '/api/mailboxes': typeof ApiMailboxesRoute
   '/api/portfolio': typeof ApiPortfolioRoute
   '/portfolio/$companyId': typeof WorkspacePortfolioCompanyIdRoute
   '/api/admin/users': typeof ApiAdminUsersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/documents/$id': typeof ApiDocumentsIdRoute
+  '/api/ingest/email': typeof ApiIngestEmailRoute
+  '/api/ingest/sync': typeof ApiIngestSyncRoute
   '/api/knowledge/email': typeof ApiKnowledgeEmailRoute
   '/portfolio/': typeof WorkspacePortfolioIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/assessments': typeof WorkspaceAssessmentsRoute
+  '/companies': typeof WorkspaceCompaniesRoute
   '/connectors': typeof WorkspaceConnectorsRoute
   '/lp': typeof WorkspaceLpRoute
+  '/scout': typeof WorkspaceScoutRoute
   '/settings': typeof WorkspaceSettingsRoute
   '/team': typeof WorkspaceTeamRoute
+  '/api/agent-runs': typeof ApiAgentRunsRoute
+  '/api/auth-config': typeof ApiAuthConfigRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/companies': typeof ApiCompaniesRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/integrations': typeof ApiIntegrationsRoute
+  '/api/mailboxes': typeof ApiMailboxesRoute
   '/api/portfolio': typeof ApiPortfolioRoute
   '/': typeof WorkspaceIndexRoute
   '/portfolio/$companyId': typeof WorkspacePortfolioCompanyIdRoute
   '/api/admin/users': typeof ApiAdminUsersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/documents/$id': typeof ApiDocumentsIdRoute
+  '/api/ingest/email': typeof ApiIngestEmailRoute
+  '/api/ingest/sync': typeof ApiIngestSyncRoute
   '/api/knowledge/email': typeof ApiKnowledgeEmailRoute
   '/portfolio': typeof WorkspacePortfolioIndexRoute
 }
@@ -144,18 +232,29 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_workspace': typeof WorkspaceRouteWithChildren
   '/login': typeof LoginRoute
+  '/_workspace/assessments': typeof WorkspaceAssessmentsRoute
+  '/_workspace/companies': typeof WorkspaceCompaniesRoute
   '/_workspace/connectors': typeof WorkspaceConnectorsRoute
   '/_workspace/lp': typeof WorkspaceLpRoute
   '/_workspace/portfolio': typeof WorkspacePortfolioRouteWithChildren
+  '/_workspace/scout': typeof WorkspaceScoutRoute
   '/_workspace/settings': typeof WorkspaceSettingsRoute
   '/_workspace/team': typeof WorkspaceTeamRoute
+  '/api/agent-runs': typeof ApiAgentRunsRoute
+  '/api/auth-config': typeof ApiAuthConfigRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/companies': typeof ApiCompaniesRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/integrations': typeof ApiIntegrationsRoute
+  '/api/mailboxes': typeof ApiMailboxesRoute
   '/api/portfolio': typeof ApiPortfolioRoute
   '/_workspace/': typeof WorkspaceIndexRoute
   '/_workspace/portfolio/$companyId': typeof WorkspacePortfolioCompanyIdRoute
   '/api/admin/users': typeof ApiAdminUsersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/documents/$id': typeof ApiDocumentsIdRoute
+  '/api/ingest/email': typeof ApiIngestEmailRoute
+  '/api/ingest/sync': typeof ApiIngestSyncRoute
   '/api/knowledge/email': typeof ApiKnowledgeEmailRoute
   '/_workspace/portfolio/': typeof WorkspacePortfolioIndexRoute
 }
@@ -164,51 +263,84 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/assessments'
+    | '/companies'
     | '/connectors'
     | '/lp'
     | '/portfolio'
+    | '/scout'
     | '/settings'
     | '/team'
+    | '/api/agent-runs'
+    | '/api/auth-config'
     | '/api/chat'
+    | '/api/companies'
+    | '/api/health'
     | '/api/integrations'
+    | '/api/mailboxes'
     | '/api/portfolio'
     | '/portfolio/$companyId'
     | '/api/admin/users'
     | '/api/auth/$'
+    | '/api/documents/$id'
+    | '/api/ingest/email'
+    | '/api/ingest/sync'
     | '/api/knowledge/email'
     | '/portfolio/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/assessments'
+    | '/companies'
     | '/connectors'
     | '/lp'
+    | '/scout'
     | '/settings'
     | '/team'
+    | '/api/agent-runs'
+    | '/api/auth-config'
     | '/api/chat'
+    | '/api/companies'
+    | '/api/health'
     | '/api/integrations'
+    | '/api/mailboxes'
     | '/api/portfolio'
     | '/'
     | '/portfolio/$companyId'
     | '/api/admin/users'
     | '/api/auth/$'
+    | '/api/documents/$id'
+    | '/api/ingest/email'
+    | '/api/ingest/sync'
     | '/api/knowledge/email'
     | '/portfolio'
   id:
     | '__root__'
     | '/_workspace'
     | '/login'
+    | '/_workspace/assessments'
+    | '/_workspace/companies'
     | '/_workspace/connectors'
     | '/_workspace/lp'
     | '/_workspace/portfolio'
+    | '/_workspace/scout'
     | '/_workspace/settings'
     | '/_workspace/team'
+    | '/api/agent-runs'
+    | '/api/auth-config'
     | '/api/chat'
+    | '/api/companies'
+    | '/api/health'
     | '/api/integrations'
+    | '/api/mailboxes'
     | '/api/portfolio'
     | '/_workspace/'
     | '/_workspace/portfolio/$companyId'
     | '/api/admin/users'
     | '/api/auth/$'
+    | '/api/documents/$id'
+    | '/api/ingest/email'
+    | '/api/ingest/sync'
     | '/api/knowledge/email'
     | '/_workspace/portfolio/'
   fileRoutesById: FileRoutesById
@@ -216,11 +348,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   WorkspaceRoute: typeof WorkspaceRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiAgentRunsRoute: typeof ApiAgentRunsRoute
+  ApiAuthConfigRoute: typeof ApiAuthConfigRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiCompaniesRoute: typeof ApiCompaniesRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   ApiIntegrationsRoute: typeof ApiIntegrationsRoute
+  ApiMailboxesRoute: typeof ApiMailboxesRoute
   ApiPortfolioRoute: typeof ApiPortfolioRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiDocumentsIdRoute: typeof ApiDocumentsIdRoute
+  ApiIngestEmailRoute: typeof ApiIngestEmailRoute
+  ApiIngestSyncRoute: typeof ApiIngestSyncRoute
   ApiKnowledgeEmailRoute: typeof ApiKnowledgeEmailRoute
 }
 
@@ -247,6 +387,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIndexRouteImport
       parentRoute: typeof WorkspaceRoute
     }
+    '/_workspace/assessments': {
+      id: '/_workspace/assessments'
+      path: '/assessments'
+      fullPath: '/assessments'
+      preLoaderRoute: typeof WorkspaceAssessmentsRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/companies': {
+      id: '/_workspace/companies'
+      path: '/companies'
+      fullPath: '/companies'
+      preLoaderRoute: typeof WorkspaceCompaniesRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
     '/_workspace/connectors': {
       id: '/_workspace/connectors'
       path: '/connectors'
@@ -268,6 +422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacePortfolioRouteImport
       parentRoute: typeof WorkspaceRoute
     }
+    '/_workspace/scout': {
+      id: '/_workspace/scout'
+      path: '/scout'
+      fullPath: '/scout'
+      preLoaderRoute: typeof WorkspaceScoutRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
     '/_workspace/settings': {
       id: '/_workspace/settings'
       path: '/settings'
@@ -282,6 +443,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceTeamRouteImport
       parentRoute: typeof WorkspaceRoute
     }
+    '/api/agent-runs': {
+      id: '/api/agent-runs'
+      path: '/api/agent-runs'
+      fullPath: '/api/agent-runs'
+      preLoaderRoute: typeof ApiAgentRunsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth-config': {
+      id: '/api/auth-config'
+      path: '/api/auth-config'
+      fullPath: '/api/auth-config'
+      preLoaderRoute: typeof ApiAuthConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -289,11 +464,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/companies': {
+      id: '/api/companies'
+      path: '/api/companies'
+      fullPath: '/api/companies'
+      preLoaderRoute: typeof ApiCompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations': {
       id: '/api/integrations'
       path: '/api/integrations'
       fullPath: '/api/integrations'
       preLoaderRoute: typeof ApiIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mailboxes': {
+      id: '/api/mailboxes'
+      path: '/api/mailboxes'
+      fullPath: '/api/mailboxes'
+      preLoaderRoute: typeof ApiMailboxesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/portfolio': {
@@ -331,6 +527,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/documents/$id': {
+      id: '/api/documents/$id'
+      path: '/api/documents/$id'
+      fullPath: '/api/documents/$id'
+      preLoaderRoute: typeof ApiDocumentsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ingest/email': {
+      id: '/api/ingest/email'
+      path: '/api/ingest/email'
+      fullPath: '/api/ingest/email'
+      preLoaderRoute: typeof ApiIngestEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ingest/sync': {
+      id: '/api/ingest/sync'
+      path: '/api/ingest/sync'
+      fullPath: '/api/ingest/sync'
+      preLoaderRoute: typeof ApiIngestSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/knowledge/email': {
       id: '/api/knowledge/email'
       path: '/api/knowledge/email'
@@ -355,18 +572,24 @@ const WorkspacePortfolioRouteWithChildren =
   WorkspacePortfolioRoute._addFileChildren(WorkspacePortfolioRouteChildren)
 
 interface WorkspaceRouteChildren {
+  WorkspaceAssessmentsRoute: typeof WorkspaceAssessmentsRoute
+  WorkspaceCompaniesRoute: typeof WorkspaceCompaniesRoute
   WorkspaceConnectorsRoute: typeof WorkspaceConnectorsRoute
   WorkspaceLpRoute: typeof WorkspaceLpRoute
   WorkspacePortfolioRoute: typeof WorkspacePortfolioRouteWithChildren
+  WorkspaceScoutRoute: typeof WorkspaceScoutRoute
   WorkspaceSettingsRoute: typeof WorkspaceSettingsRoute
   WorkspaceTeamRoute: typeof WorkspaceTeamRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
 }
 
 const WorkspaceRouteChildren: WorkspaceRouteChildren = {
+  WorkspaceAssessmentsRoute: WorkspaceAssessmentsRoute,
+  WorkspaceCompaniesRoute: WorkspaceCompaniesRoute,
   WorkspaceConnectorsRoute: WorkspaceConnectorsRoute,
   WorkspaceLpRoute: WorkspaceLpRoute,
   WorkspacePortfolioRoute: WorkspacePortfolioRouteWithChildren,
+  WorkspaceScoutRoute: WorkspaceScoutRoute,
   WorkspaceSettingsRoute: WorkspaceSettingsRoute,
   WorkspaceTeamRoute: WorkspaceTeamRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
@@ -379,11 +602,19 @@ const WorkspaceRouteWithChildren = WorkspaceRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   WorkspaceRoute: WorkspaceRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiAgentRunsRoute: ApiAgentRunsRoute,
+  ApiAuthConfigRoute: ApiAuthConfigRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiCompaniesRoute: ApiCompaniesRoute,
+  ApiHealthRoute: ApiHealthRoute,
   ApiIntegrationsRoute: ApiIntegrationsRoute,
+  ApiMailboxesRoute: ApiMailboxesRoute,
   ApiPortfolioRoute: ApiPortfolioRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiDocumentsIdRoute: ApiDocumentsIdRoute,
+  ApiIngestEmailRoute: ApiIngestEmailRoute,
+  ApiIngestSyncRoute: ApiIngestSyncRoute,
   ApiKnowledgeEmailRoute: ApiKnowledgeEmailRoute,
 }
 export const routeTree = rootRouteImport

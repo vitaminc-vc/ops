@@ -11,8 +11,8 @@ import { Button } from './ui'
 import { ChatScrollButton, ChatScrollContent, ChatScrollFrame, ChatScrollItem, ChatScrollProvider, ChatScrollViewport } from './chat-scroller'
 
 const suggestions = [
-  { icon: NotebookPen, label: 'Prepare for a founder call', prompt: 'Prepare me for a founder call with EmberGrid using its latest update.' },
-  { icon: ClipboardCheck, label: 'Run a startup assessment', prompt: 'Assess EmberGrid based on its founder update. What should we investigate next?' },
+  { icon: NotebookPen, label: 'Prepare for a founder call', prompt: 'Summarize the latest founder emails and identify questions for a follow-up call.' },
+  { icon: ClipboardCheck, label: 'Run a startup assessment', prompt: 'Which companies have enough evidence for a startup assessment?' },
   { icon: Telescope, label: 'Explore new deal flow', prompt: 'Find new companies aligned with our investment thesis' },
 ]
 

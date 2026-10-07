@@ -43,7 +43,7 @@ const oldAuth=process.env.BETTER_AUTH_SECRET;process.env.BETTER_AUTH_SECRET=rand
 const oldURL=process.env.BETTER_AUTH_URL;process.env.BETTER_AUTH_URL='http://127.0.0.1:3000'
 process.env.INTEGRATION_STATE_DIRECTORY=dir;process.env.CONNECTOR_ENCRYPTION_KEY=randomBytes(32).toString('hex')
 try{
- const state=await readIntegrationState();assert.equal(state.settings.screening.mode,'off');assert.throws(()=>validateSettings({...state.settings,screening:{...state.settings.screening,mode:'on'}}),/remain off/)
+ const state=await readIntegrationState();assert.equal(state.settings.screening.mode,'enforced');assert.throws(()=>validateSettings({...state.settings,screening:{...state.settings.screening,mode:'off'}}),/remain enforced/)
  await Promise.all(Array.from({length:12},(_,i)=>updateIntegrationState(state=>{state.credentials['fixture-'+i]='secret-canary-'+i})))
  const saved=await readIntegrationState();assert.equal(Object.keys(saved.credentials).length,12)
  const raw=await readFile(dir+'/integrations.enc','utf8');assert.ok(!raw.includes('secret-canary'));const tampered=JSON.parse(raw);tampered.tag='00'.repeat(16);assert.throws(()=>decryptState(JSON.stringify(tampered)))

@@ -1,5 +1,5 @@
 /** Small RFC 4180 reader for local list imports, including quoted commas and newlines. */
-export function parseCSV(text: string): Record<string, string>[] {
+export function parseTableCSV(text: string, maxRows = 10_000): Record<string, string>[] {
   const rows: string[][] = []; let row: string[] = []; let field = ''; let quoted = false
   for (let i = 0; i < text.length; i++) {
     const c = text[i]
@@ -11,6 +11,13 @@ export function parseCSV(text: string): Record<string, string>[] {
   if (quoted) throw new Error('The CSV has an unclosed quoted field.')
   row.push(field.trim()); if (row.some(Boolean)) rows.push(row)
   const headers = rows.shift()?.map(h => h.replace(/^\uFEFF/, '').toLowerCase()) ?? []
-  if (!headers.includes('name')) throw new Error('Include a “name” column in your CSV.')
-  return rows.slice(0, 500).map(values => Object.fromEntries(headers.map((h, i) => [h, values[i] ?? '']))).filter(record => record.name)
+  if (new Set(headers).size !== headers.length) throw new Error('CSV column names must be unique.')
+  if (rows.length > maxRows) throw new Error('The CSV exceeds the row limit. No rows were truncated.')
+  if (rows.some(values => values.length !== headers.length)) throw new Error('The CSV contains a row with missing or extra columns.')
+  return rows.map(values => Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ''])))
+}
+export function parseCSV(text: string): Record<string,string>[] {
+  const rows = parseTableCSV(text, 500)
+  if (rows.length && !('name' in rows[0])) throw new Error('Include a “name” column in your CSV.')
+  return rows.filter(row => row.name)
 }

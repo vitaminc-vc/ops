@@ -21,11 +21,14 @@ export const workspaceAuthPolicy = {
 } satisfies Pick<BetterAuthOptions, 'emailAndPassword' | 'user'>
 
 function createAuth() {
+  const google = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
   return betterAuth({
     appName: 'Vitamin-C',
     ...authEnvironment(),
     database: drizzleAdapter(getDatabase(), { provider: 'pg', schema, schemaName: 'vitamin_auth' }),
     ...workspaceAuthPolicy,
+    socialProviders: google ? { google: { clientId: process.env.GOOGLE_CLIENT_ID!, clientSecret: process.env.GOOGLE_CLIENT_SECRET!, hd: 'vitaminc.vc', accessType: 'offline', prompt: 'select_account consent' } } : {},
+    account: { encryptOAuthTokens: true, accountLinking: { enabled: true, allowDifferentEmails: false, requireLocalEmailVerified: true } },
     session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24, cookieCache: { enabled: false } },
     rateLimit: { enabled: true, window: 60, max: 60 },
     advanced: { cookiePrefix: 'vitamin-c', useSecureCookies: process.env.NODE_ENV === 'production' },
