@@ -43,8 +43,10 @@ export default function SidebarNav() {
       </nav>
       {conversations.some(c => c.messages.length) && <div className="chat-history sidebar-copy">
         <div className="chat-history-head">{searching ? <label className="chat-search"><Search size={13} /><input autoFocus value={query} onChange={e => setQuery(e.target.value)} aria-label="Search chat history" placeholder="Search chats" /><IconButton aria-label="Close chat search" onClick={() => { setSearching(false); setQuery('') }}><X /></IconButton></label> : <><span>Chats</span><IconButton aria-label="Search chats" onClick={() => setSearching(true)}><Search /></IconButton></>}</div>
+        <div className="chat-history-list">
         {history.map(chat => <button key={chat.id} className={`history-row ${path === '/' && activeId === chat.id ? 'selected' : ''}`} onClick={() => { setActiveId(chat.id); void navigate({ to: '/' }) }} title={chat.title}>{chat.title}</button>)}
         {!history.length && searching && <p className="muted small history-empty">No matching chats.</p>}
+        </div>
       </div>}
       <div className="sidebar-account">
         {<><Link to="/connectors" className={`sidebar-row ${path === '/connectors' ? 'selected' : ''}`} aria-label="Connected Sources"><Plug/><span className="sidebar-copy">Connected Sources</span></Link>{user.role === 'admin' && <Link to="/settings" className={`sidebar-row ${path === '/settings' ? 'selected' : ''}`} aria-label="Settings"><Settings2/><span className="sidebar-copy">Settings</span></Link>}</>}
