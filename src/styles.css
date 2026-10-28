@@ -329,6 +329,15 @@ h2,h3 { font-size:13px; line-height:20px; font-weight:500; }
 .source-excerpt svg { flex-shrink:0; color:var(--ink-2); margin-top:3px; }
 .source-excerpt p { min-width:0; line-height:23px; white-space:pre-wrap; overflow-wrap:anywhere; }
 .source-link { margin-top:16px; text-decoration:none; }
+.source-record { min-width:0; flex:1; font-size:13px; line-height:21px; overflow-wrap:anywhere; }
+.source-fields { margin:0; }
+.source-field + .source-field { margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+.source-field dt { margin-bottom:4px; color:var(--ink-2); font-size:11px; font-weight:500; }
+.source-field dd { margin:0; white-space:pre-wrap; }
+.source-field dd .source-fields { padding-left:12px; }
+.source-unreported { color:var(--ink-2); }
+.source-value-list { margin:0; padding-left:18px; list-style:disc; }
+.source-value-list li + li { margin-top:6px; }
 .facts>div { display:flex; justify-content:space-between; align-items:center; gap:18px; padding:13px 0; border-bottom:.5px solid var(--line); font-size:12px; }
 .facts>div>span { color:var(--ink-2); flex-shrink:0; }
 .facts strong { font-weight:400; text-align:right; }
